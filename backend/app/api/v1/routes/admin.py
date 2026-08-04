@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Request
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Request, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import json
+import logging
 
 from app.core.database import get_db
 from app.core.config import settings
@@ -14,6 +15,19 @@ from app.schemas.schemas import (
 )
 from app.services.cloudinary import upload_watch_image, delete_watch_image
 from app.core.limiter import limiter
+
+logger = logging.getLogger(__name__)
+
+def send_payment_confirmation_email(user_email: str, order_number: str, total_amount: float, items: list):
+    # Log payment confirmation email details
+    logger.info("======== TRANSACTIONAL EMAIL: PAYMENT CONFIRMED ========")
+    logger.info(f"Recipient: {user_email}")
+    logger.info(f"Subject: Payment Confirmed for Order #{order_number}")
+    logger.info(f"Amount Settled: ₹{total_amount:,.2f}")
+    logger.info("Items details:")
+    for idx, item in enumerate(items):
+        logger.info(f"  {idx + 1}. [{item['brand']}] {item['name']} - Qty: {item['quantity']} - Price: ₹{item['price']:,.2f} - Visual: {item['image_url']}")
+    logger.info("========================================================")
 
 router = APIRouter(prefix="/admin", tags=["Admin Management"])
 
@@ -245,6 +259,7 @@ def get_orders(
 def update_order_status(
     order_id: int,
     status_data: OrderStatusUpdate,
+    background_tasks: BackgroundTasks,
     admin: str = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
@@ -252,10 +267,34 @@ def update_order_status(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
         
+    old_payment_status = order.payment_status
     order.status = status_data.status
     if status_data.payment_status:
         order.payment_status = status_data.payment_status
         
     db.commit()
     db.refresh(order)
+    
+    # Trigger payment confirmation email if transitioned to Paid
+    if old_payment_status != "Paid" and order.payment_status == "Paid":
+        # Extract items information with images
+        items_list = []
+        for item in order.items:
+            img_url = item.product.images[0].image_url if item.product.images else "https://images.unsplash.com/photo-1547996160-81dfa63595aa?q=80&w=200"
+            items_list.append({
+                "name": item.product.name,
+                "brand": item.product.brand,
+                "quantity": item.quantity,
+                "price": item.price,
+                "image_url": img_url
+            })
+            
+        background_tasks.add_task(
+            send_payment_confirmation_email,
+            order.user.email,
+            order.order_number,
+            order.total_amount,
+            items_list
+        )
+        
     return order
