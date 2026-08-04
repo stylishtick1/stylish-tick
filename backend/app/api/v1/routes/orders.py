@@ -1,7 +1,7 @@
 import datetime
 import random
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -9,6 +9,7 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.models import User, Cart, CartItem, Order, OrderItem, Product
 from app.schemas.schemas import OrderCreate, OrderResponse
+from app.core.limiter import limiter
 
 router = APIRouter(prefix="/orders", tags=["Order Management"])
 
@@ -18,7 +19,9 @@ def generate_order_number() -> str:
     return f"LWP-{date_str}-{rand_str}"
 
 @router.post("", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")
 def place_order(
+    request: Request,
     order_data: OrderCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)

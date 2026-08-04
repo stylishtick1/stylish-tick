@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
@@ -8,11 +8,13 @@ from app.core.security import get_password_hash, verify_password, create_access_
 from app.core.dependencies import get_current_user
 from app.models.models import User, Cart
 from app.schemas.schemas import UserCreate, UserLogin, UserResponse, UserUpdate, PasswordChange, Token
+from app.core.limiter import limiter
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(user_data: UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def register(request: Request, user_data: UserCreate, db: Session = Depends(get_db)):
     # Check if email is unique
     existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
@@ -43,7 +45,8 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 @router.post("/login", response_model=Token)
-def login(login_data: UserLogin, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def login(request: Request, login_data: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == login_data.email, User.is_active == True).first()
     if not user or not verify_password(login_data.password, user.password_hash):
         raise HTTPException(
@@ -60,7 +63,8 @@ def login(login_data: UserLogin, db: Session = Depends(get_db)):
 
 # Support both OAuth2 Form login (useful for Swagger docs) and standard JSON login
 @router.post("/token", response_model=Token, include_in_schema=False)
-def login_swagger(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def login_swagger(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == form_data.username, User.is_active == True).first()
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(

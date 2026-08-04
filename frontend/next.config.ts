@@ -1,4 +1,6 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
+import withBundleAnalyzer from "@next/bundle-analyzer";
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -17,4 +19,15 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const analyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
+
+export default withSentryConfig(analyzer(nextConfig), {
+  silent: true,
+  org: "stylishtick",
+  project: "frontend",
+  widenClientFileUpload: true,
+  hideSourceMaps: true,
+  disableLogger: true,
+});

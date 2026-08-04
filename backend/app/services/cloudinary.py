@@ -2,7 +2,7 @@ import os
 import uuid
 import cloudinary
 import cloudinary.uploader
-from fastapi import UploadFile
+from fastapi import UploadFile, HTTPException
 from app.core.config import settings
 
 # Configure Cloudinary if credentials are provided
@@ -21,6 +21,26 @@ def upload_watch_image(file: UploadFile) -> str:
     Uploads a watch image. If Cloudinary is configured, uploads there and returns the URL.
     Otherwise, saves it locally and returns a static file path.
     """
+    # 1. Validate File Type
+    allowed_types = ["image/jpeg", "image/png", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid image format. Only JPEG, PNG, and WEBP are supported. Got: {file.content_type}"
+        )
+
+    # 2. Validate File Size (Max 5MB)
+    MAX_FILE_SIZE = 5 * 1024 * 1024
+    file.file.seek(0, 2)
+    file_size = file.file.tell()
+    file.file.seek(0)
+    
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File size exceeds the maximum limit of 5MB. Got: {file_size / (1024 * 1024):.2f}MB"
+        )
+
     if cloudinary_configured:
         try:
             # Upload with standard options (compression, resizing, etc.)
