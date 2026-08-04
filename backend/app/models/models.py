@@ -29,13 +29,13 @@ class Product(Base):
     name = Column(String, index=True, nullable=False)
     brand = Column(String, index=True, nullable=False)
     description = Column(String, nullable=True)
-    price = Column(Float, nullable=False)
+    price = Column(Float, index=True, nullable=False)
     stock = Column(Integer, default=0)
-    category = Column(String, nullable=False)  # e.g. Male Watches, Female Watches, Premium Watches, Shoes, Premium Shoes
+    category = Column(String, index=True, nullable=False)  # e.g. Male Watches, Female Watches, Premium Watches, Shoes, Premium Shoes
     parent_id = Column(String, ForeignKey("products.id"), nullable=True)
     featured = Column(Boolean, default=False)
     is_curated_trending = Column(Boolean, default=False)
-    is_deleted = Column(Boolean, default=False) # Soft delete
+    is_deleted = Column(Boolean, index=True, default=False) # Soft delete
     specifications = Column(JSON, default=dict) # Dynamic product attributes (movement, sizes, etc.)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)

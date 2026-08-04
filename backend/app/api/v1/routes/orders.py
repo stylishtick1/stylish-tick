@@ -1,7 +1,8 @@
 import datetime
 import random
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+import logging
+from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -11,6 +12,8 @@ from app.models.models import User, Cart, CartItem, Order, OrderItem, Product
 from app.schemas.schemas import OrderCreate, OrderResponse
 from app.core.limiter import limiter
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/orders", tags=["Order Management"])
 
 def generate_order_number() -> str:
@@ -18,11 +21,16 @@ def generate_order_number() -> str:
     rand_str = uuid.uuid4().hex[:6].upper()
     return f"LWP-{date_str}-{rand_str}"
 
+def send_order_confirmation_email(user_email: str, order_number: str, total_amount: float):
+    # Asynchronously logged background action representing transactional mail dispatch.
+    logger.info(f"[Email Queue] Dispatching confirmation invoice to: {user_email} | Order: {order_number} | Amount: ${total_amount:.2f}")
+
 @router.post("", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
 def place_order(
     request: Request,
     order_data: OrderCreate,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -104,6 +112,15 @@ def place_order(
         # Commit all changes atomically (Order creation, stock deduction, order items, cart clear)
         db.commit()
         db.refresh(new_order)
+
+        # Dispatch confirmation email asynchronously in the background
+        background_tasks.add_task(
+            send_order_confirmation_email,
+            current_user.email,
+            new_order.order_number,
+            new_order.total_amount
+        )
+
         return new_order
         
     except HTTPException:

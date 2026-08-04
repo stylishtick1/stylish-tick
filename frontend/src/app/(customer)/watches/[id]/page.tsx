@@ -191,8 +191,37 @@ export default function WatchDetailsPage() {
 
   const currentGalleryImg = galleryImages[activeImageIdx]?.image_url;
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": watch.name,
+    "image": galleryImages[0]?.image_url,
+    "description": watch.description,
+    "brand": {
+      "@type": "Brand",
+      "name": watch.brand
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": watch.price,
+      "priceCurrency": "INR",
+      "availability": watch.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+    },
+    ...(watch.reviews.length > 0 ? {
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": watch.average_rating,
+        "reviewCount": watch.reviews.length
+      }
+    } : {})
+  };
+
   return (
     <div className="container mx-auto px-4 py-10 space-y-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       
       {/* 1. PRODUCT METADATA & ACTIONS */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start">
