@@ -90,7 +90,7 @@ def place_order(
             country=order_data.country,
             postal_code=order_data.postal_code,
             payment_method=order_data.payment_method,
-            payment_status="Pending" if order_data.payment_method == "Cash on Delivery" else "Paid"
+            payment_status="Awaiting Verification" if order_data.payment_method == "UPI via WhatsApp" else "Pending"
         )
         db.add(new_order)
         # Flush to database to generate new_order.id without committing yet

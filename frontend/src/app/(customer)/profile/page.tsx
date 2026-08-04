@@ -429,9 +429,22 @@ export default function ProfilePage() {
                               </div>
                               <div className="space-y-1.5">
                                 <h4 className="font-semibold text-[10px] uppercase text-primary tracking-wider">Payment Info</h4>
-                                <div className="space-y-0.5 text-muted-foreground">
-                                  <p>Status: <span className="font-semibold text-foreground">{order.payment_status}</span></p>
+                                <div className="space-y-0.5 text-muted-foreground text-[11px]">
+                                  <p>Status: <span className={`font-semibold ${order.payment_status === 'Awaiting Verification' ? 'text-amber-600 dark:text-amber-400 animate-pulse' : 'text-foreground'}`}>{order.payment_status}</span></p>
                                   <p>Method: <span className="font-semibold text-foreground">{order.payment_method}</span></p>
+                                  {order.payment_status === 'Awaiting Verification' && (
+                                    <div className="mt-2 pt-1">
+                                      <a
+                                        href={`https://wa.me/919876543210?text=Hi%20StylishTick%2C%20I%20want%20to%20complete%20payment%20for%20order%20%23${order.order_number}%20worth%20%E2%82%B9${order.total_amount}.`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-semibold uppercase tracking-wider transition-colors shadow-sm"
+                                      >
+                                        <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm5.835-4.26c1.656.982 3.284 1.503 4.887 1.504 5.548 0 10.063-4.505 10.066-10.054.001-2.688-1.042-5.216-2.935-7.11C15.918 2.185 13.393.976 10.708.975c-5.55 0-10.067 4.506-10.07 10.057-.001 1.957.513 3.867 1.489 5.558L1.13 21.05l4.762-1.31z"/></svg>
+                                        Verify via WhatsApp
+                                      </a>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>

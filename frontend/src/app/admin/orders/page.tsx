@@ -178,7 +178,8 @@ export default function AdminOrdersPage() {
                   </td>
                   <td className="p-4">
                     <span className={`px-2 py-0.5 rounded font-semibold ${
-                      o.payment_status === 'Paid' ? 'text-emerald-700 bg-emerald-50' : 'text-amber-700 bg-amber-50'
+                      o.payment_status === 'Paid' ? 'text-emerald-700 bg-emerald-50' : 
+                      o.payment_status === 'Awaiting Verification' ? 'text-amber-600 bg-amber-50 border border-amber-100 animate-pulse' : 'text-zinc-600 bg-zinc-100'
                     }`}>
                       {o.payment_status}
                     </span>
@@ -304,6 +305,7 @@ export default function AdminOrdersPage() {
                   className="w-full bg-white border border-zinc-200 text-zinc-900 rounded px-3 py-2 outline-none"
                 >
                   <option value="Pending">Pending</option>
+                  <option value="Awaiting Verification">Awaiting Verification</option>
                   <option value="Paid">Paid</option>
                 </select>
               </div>

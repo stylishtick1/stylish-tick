@@ -26,6 +26,7 @@ export default function CheckoutPage() {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'Cash on Delivery' | 'UPI via WhatsApp'>('UPI via WhatsApp');
   
   // Checkout Success State
   const [createdOrder, setCreatedOrder] = useState<any | null>(null);
@@ -87,7 +88,7 @@ export default function CheckoutPage() {
         state: formData.state,
         country: formData.country,
         postal_code: formData.postalCode,
-        payment_method: 'Cash on Delivery'
+        payment_method: paymentMethod
       };
       
       const response = await api.post('/orders', orderPayload);
@@ -105,25 +106,31 @@ export default function CheckoutPage() {
   // If order was created successfully, show confirmation screen
   if (createdOrder) {
     return (
-      <div className="container mx-auto px-4 py-16 max-w-xl text-center space-y-8">
+      <div className="container mx-auto px-4 py-16 max-w-xl text-center space-y-6">
         <div className="space-y-4">
-          <CheckCircle className="w-16 h-16 text-primary mx-auto stroke-[1.5]" />
-          <h1 className="text-3xl font-light font-luxury tracking-wider text-foreground">Order Confirmed</h1>
-          <p className="text-xs text-muted-foreground uppercase tracking-widest">Thank you for shopping with Stylish Tick</p>
+          <CheckCircle className="w-16 h-16 text-emerald-600 dark:text-emerald-400 mx-auto stroke-[1.5] animate-bounce" />
+          <h1 className="text-3xl font-light font-luxury tracking-wider text-foreground">Order Placed</h1>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest">Your timepiece has been successfully reserved</p>
         </div>
 
         <div className="bg-card border border-border p-4 sm:p-6 rounded-lg text-xs text-left space-y-4 shadow">
           <div className="flex justify-between pb-3 border-b border-border/50 font-semibold text-sm">
             <span>Order Reference</span>
-            <span className="text-primary">{createdOrder.order_number}</span>
+            <span className="text-primary font-mono">{createdOrder.order_number}</span>
           </div>
           <div className="flex justify-between py-1">
-            <span className="text-muted-foreground">Total to Pay (COD)</span>
+            <span className="text-muted-foreground">Total Amount</span>
             <span className="font-semibold text-foreground">₹{createdOrder.total_amount.toLocaleString()}</span>
           </div>
           <div className="flex justify-between py-1">
-            <span className="text-muted-foreground">Shipping Method</span>
-            <span className="font-semibold text-foreground">Fully Insured Boutique Courier</span>
+            <span className="text-muted-foreground">Payment Method</span>
+            <span className="font-semibold text-foreground">{createdOrder.payment_method === 'UPI via WhatsApp' ? 'UPI Transfer' : 'Cash on Delivery (COD)'}</span>
+          </div>
+          <div className="flex justify-between py-1">
+            <span className="text-muted-foreground">Payment Status</span>
+            <span className={`font-semibold ${createdOrder.payment_status === 'Awaiting Verification' ? 'text-amber-600 dark:text-amber-400 animate-pulse' : 'text-foreground'}`}>
+              {createdOrder.payment_status}
+            </span>
           </div>
           <div className="flex justify-between py-1">
             <span className="text-muted-foreground">Delivery Address</span>
@@ -133,19 +140,46 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 justify-center w-full max-w-sm mx-auto">
-          <Link 
-            href="/profile"
-            className="w-full sm:w-auto text-center px-6 py-3 bg-primary hover:bg-primary-hover text-primary-foreground text-xs uppercase tracking-wider font-semibold rounded transition-colors shadow-lg"
+        {createdOrder.payment_method === 'UPI via WhatsApp' ? (
+          <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 rounded-lg text-xs space-y-2 text-left">
+            <p className="font-bold uppercase tracking-wider text-[10px] text-emerald-600 dark:text-emerald-400">Payment Verification Required</p>
+            <p className="leading-relaxed">To activate order processing, click the green button below to connect with our WhatsApp boutique concierge, submit your UPI screenshot, and confirm shipping.</p>
+          </div>
+        ) : (
+          <div className="p-4 bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 rounded-lg text-xs space-y-2 text-left">
+            <p className="font-bold uppercase tracking-wider text-[10px] text-amber-600 dark:text-amber-400">COD Verification Required</p>
+            <p className="leading-relaxed">Your cash-on-delivery order is reserved. Please click the button below to verify your address details on WhatsApp to expedite dispatch.</p>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-3 justify-center w-full max-w-sm mx-auto pt-2">
+          <a 
+            href={
+              createdOrder.payment_method === 'UPI via WhatsApp'
+                ? `https://wa.me/919876543210?text=Hi%20StylishTick%20Boutique%2C%20I%20have%20placed%20order%20%23${createdOrder.order_number}%20worth%20%E2%82%B9${createdOrder.total_amount}.%20Please%20verify%20my%20details%20and%20share%20the%20UPI%20payment%20instructions.`
+                : `https://wa.me/919876543210?text=Hi%20StylishTick%20Boutique%2C%20I%20want%20to%20verify%20my%20COD%20order%20%23${createdOrder.order_number}.`
+            }
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full text-center px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs uppercase tracking-wider font-semibold rounded transition-colors shadow-lg flex items-center justify-center gap-2"
           >
-            View My Orders
-          </Link>
-          <Link 
-            href="/shop"
-            className="w-full sm:w-auto text-center px-6 py-3 border border-border hover:border-primary text-foreground text-xs uppercase tracking-wider font-semibold rounded transition-colors"
-          >
-            Continue Shopping
-          </Link>
+            <svg className="w-4 h-4 fill-current flex-shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm5.835-4.26c1.656.982 3.284 1.503 4.887 1.504 5.548 0 10.063-4.505 10.066-10.054.001-2.688-1.042-5.216-2.935-7.11C15.918 2.185 13.393.976 10.708.975c-5.55 0-10.067 4.506-10.07 10.057-.001 1.957.513 3.867 1.489 5.558L1.13 21.05l4.762-1.31z"/></svg>
+            Verify on WhatsApp
+          </a>
+          <div className="flex gap-2.5 w-full">
+            <Link 
+              href="/profile"
+              className="flex-1 text-center px-4 py-2.5 border border-border hover:border-primary text-foreground text-[10px] uppercase tracking-wider font-semibold rounded transition-colors"
+            >
+              My Orders
+            </Link>
+            <Link 
+              href="/shop"
+              className="flex-1 text-center px-4 py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground text-[10px] uppercase tracking-wider font-semibold rounded transition-colors"
+            >
+              Browse Shop
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -259,21 +293,56 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          <div className="pt-4 border-t border-border/60">
-            <h2 className="text-sm font-semibold uppercase tracking-wider pb-3 flex items-center gap-2">
+          <div className="pt-4 border-t border-border/60 space-y-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wider pb-1 flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-primary" />
               Payment Method
             </h2>
-            <div className="p-4 bg-muted border border-border rounded flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-2">
-                <input type="radio" defaultChecked className="accent-primary flex-shrink-0" />
-                <span className="font-semibold">Cash on Delivery (COD)</span>
+            
+            <div className="space-y-3">
+              {/* Option 1: WhatsApp UPI */}
+              <div 
+                className={`p-4 border rounded flex items-start gap-3 text-xs cursor-pointer transition-all ${paymentMethod === 'UPI via WhatsApp' ? 'border-primary bg-primary/5' : 'border-border bg-muted/40 hover:bg-muted/70'}`}
+                onClick={() => setPaymentMethod('UPI via WhatsApp')}
+              >
+                <input 
+                  type="radio" 
+                  name="paymentMethodSelect"
+                  checked={paymentMethod === 'UPI via WhatsApp'}
+                  onChange={() => setPaymentMethod('UPI via WhatsApp')}
+                  className="accent-primary mt-0.5 flex-shrink-0" 
+                />
+                <div className="space-y-0.5">
+                  <div className="font-semibold text-foreground flex items-center gap-1.5">
+                    UPI Transfer & WhatsApp Verification
+                    <span className="text-[8px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">Recommended</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Complete payment using GPay, PhonePe or Paytm. Send payment receipt on WhatsApp for priority processing.
+                  </p>
+                </div>
               </div>
-              <span className="text-[10px] text-muted-foreground uppercase font-bold text-left sm:text-right">Complimentary Shipping</span>
+
+              {/* Option 2: Cash on Delivery */}
+              <div 
+                className={`p-4 border rounded flex items-start gap-3 text-xs cursor-pointer transition-all ${paymentMethod === 'Cash on Delivery' ? 'border-primary bg-primary/5' : 'border-border bg-muted/40 hover:bg-muted/70'}`}
+                onClick={() => setPaymentMethod('Cash on Delivery')}
+              >
+                <input 
+                  type="radio" 
+                  name="paymentMethodSelect"
+                  checked={paymentMethod === 'Cash on Delivery'}
+                  onChange={() => setPaymentMethod('Cash on Delivery')}
+                  className="accent-primary mt-0.5 flex-shrink-0" 
+                />
+                <div className="space-y-0.5">
+                  <div className="font-semibold text-foreground">Cash on Delivery (COD)</div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Pay with cash at the time of delivery. Requires brief verification call/message before dispatch.
+                  </p>
+                </div>
+              </div>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-2 pl-1">
-              Pay with cash upon delivery of your luxury timepiece.
-            </p>
           </div>
 
           <button
