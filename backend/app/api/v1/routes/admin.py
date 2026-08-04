@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Request
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import json
@@ -13,11 +13,13 @@ from app.schemas.schemas import (
     OrderResponse, OrderStatusUpdate, ProductImageCreate, ProductImageResponse
 )
 from app.services.cloudinary import upload_watch_image, delete_watch_image
+from app.core.limiter import limiter
 
 router = APIRouter(prefix="/admin", tags=["Admin Management"])
 
 @router.post("/login", response_model=Token)
-def admin_login(login_data: AdminLogin):
+@limiter.limit("5/minute")
+def admin_login(request: Request, login_data: AdminLogin):
     if login_data.username != settings.ADMIN_USERNAME or login_data.password != settings.ADMIN_PASSWORD:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

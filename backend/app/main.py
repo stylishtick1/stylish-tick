@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
@@ -210,8 +210,18 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+from sqlalchemy.exc import IntegrityError
+from fastapi.responses import JSONResponse
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+@app.exception_handler(IntegrityError)
+async def integrity_exception_handler(request: Request, exc: IntegrityError):
+    return JSONResponse(
+        status_code=400,
+        content={"detail": "Database integrity constraint violation. Duplicate or invalid record data."}
+    )
 
 # CORS Middleware
 origins = [origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()]
