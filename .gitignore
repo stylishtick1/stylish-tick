@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+ENV/
+env/
+.env
+
+# Node/Next.js
+node_modules/
+.next/
+out/
+build/
+.next-env.d.ts
+
+# SQLite
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
