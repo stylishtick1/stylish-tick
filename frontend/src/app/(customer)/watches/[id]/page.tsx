@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ShoppingCart, Star, Heart, Shield, Award, Sparkles, Plus, Minus, Send, Check } from 'lucide-react';
+import { ShoppingCart, Star, Heart, Shield, Award, Sparkles, Plus, Minus, Send, Check, AlertCircle } from 'lucide-react';
 import api from '../../../../services/api';
 import { useAuthStore } from '../../../../store/authStore';
 import { useCartStore } from '../../../../store/cartStore';
@@ -360,6 +360,12 @@ export default function WatchDetailsPage() {
           {/* Controls */}
           {watch.stock > 0 ? (
             <div className="space-y-4 pt-2">
+              {watch.stock <= 2 && (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 rounded-lg text-xs font-semibold uppercase tracking-wider flex items-center gap-2 animate-pulse w-fit">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>Hurry! Only {watch.stock} timepiece{watch.stock > 1 ? 's' : ''} left in stock</span>
+                </div>
+              )}
               <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quantity</span>
                 <div className="flex items-center border border-border rounded bg-muted/30">
