@@ -79,6 +79,17 @@ export default function AdminOrdersPage() {
   const handleUpdateStatusSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingOrder) return;
+    
+    // Check if transitioning to Paid and ask for confirmation
+    if (editingOrder.payment_status !== 'Paid' && newPaymentStatus === 'Paid') {
+      const isConfirmed = window.confirm(
+        `Are you sure you want to mark Order #${editingOrder.order_number} as PAID?\n\nThis will update the order status and immediately trigger a transactional payment receipt email to the customer (${editingOrder.user_email}).`
+      );
+      if (!isConfirmed) {
+        return;
+      }
+    }
+
     setStatusSubmitting(true);
     try {
       await api.put(`/admin/orders/${editingOrder.id}`, {
