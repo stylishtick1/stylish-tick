@@ -9,9 +9,6 @@ from app.core.config import settings
 from app.models.models import Product, ProductImage, User
 from app.core.security import get_password_hash
 
-# Routers
-from app.routers import auth, admin, watches, cart, orders, reviews, wishlist, analytics
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Ensure static directory exists
@@ -212,15 +209,8 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Include Routers
-app.include_router(auth.router, prefix="/api/v1")
-app.include_router(admin.router, prefix="/api/v1")
-app.include_router(watches.router, prefix="/api/v1/watches")
-app.include_router(watches.router, prefix="/api/v1/products")
-app.include_router(cart.router, prefix="/api/v1")
-app.include_router(orders.router, prefix="/api/v1")
-app.include_router(reviews.router, prefix="/api/v1")
-app.include_router(wishlist.router, prefix="/api/v1")
-app.include_router(analytics.router, prefix="/api/v1")
+from app.api.v1.api import api_router
+app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/")
 def read_root():
