@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { User, Key, ShoppingBag, ChevronDown, ChevronUp, AlertCircle, CheckCircle, Smartphone, Mail, MapPin } from 'lucide-react';
+import { User, Key, ShoppingBag, ChevronDown, ChevronUp, AlertCircle, CheckCircle, Smartphone, Mail, MapPin, Package, Truck, ShieldCheck } from 'lucide-react';
 import api from '../../../services/api';
 import { useAuthStore } from '../../../store/authStore';
 
@@ -30,16 +30,24 @@ interface Order {
 const renderOrderStatusStepper = (status: string) => {
   if (status === 'Cancelled') {
     return (
-      <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-center rounded my-2 font-sans">
-        This order has been cancelled.
+      <div className="p-4 bg-destructive/10 border border-destructive/20 text-destructive text-center rounded-lg my-4 font-sans flex items-center justify-center gap-2">
+        <AlertCircle className="w-4 h-4" />
+        <span className="font-semibold text-xs uppercase tracking-wider">This acquisition has been cancelled.</span>
       </div>
     );
   }
 
-  const steps = ['Placed', 'Confirmed', 'Shipped', 'Delivered'];
+  const steps = [
+    { label: 'Placed', icon: CheckCircle, desc: 'We have received your reservation request.' },
+    { label: 'Processing', icon: Package, desc: 'Your watch is undergoing authentication and custom boxing.' },
+    { label: 'Shipped', icon: Truck, desc: 'Acquisition has been dispatched via complimentary concierge shipping.' },
+    { label: 'Delivered', icon: ShieldCheck, desc: 'Timepiece has been successfully hand-delivered.' }
+  ];
+
   const statusIndices: Record<string, number> = {
     'Pending': 0,
     'Confirmed': 1,
+    'Processing': 1,
     'Shipped': 2,
     'Delivered': 3
   };
@@ -47,13 +55,19 @@ const renderOrderStatusStepper = (status: string) => {
   const currentStepIdx = statusIndices[status] ?? 0;
 
   return (
-    <div className="py-4 border-b border-border/40 space-y-3 font-sans">
-      <h4 className="font-semibold text-[10px] uppercase text-primary tracking-wider mb-2">Shipment Progress</h4>
-      <div className="relative flex items-center justify-between w-full max-w-md mx-auto px-4 py-2">
+    <div className="py-6 border-y border-border/40 space-y-6 font-sans bg-muted/10 rounded-lg p-4 my-4">
+      <div className="flex justify-between items-center">
+        <h4 className="font-semibold text-[10px] uppercase text-primary tracking-widest animate-pulse">Acquisition Transit Timeline</h4>
+        <span className="text-[10px] text-muted-foreground font-mono bg-muted px-2.5 py-0.5 rounded-full uppercase">
+          Stage: {steps[currentStepIdx]?.label}
+        </span>
+      </div>
+
+      <div className="relative flex items-center justify-between w-full max-w-lg mx-auto px-6 py-2">
         {/* Progress Line */}
-        <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-[2px] bg-border z-0">
+        <div className="absolute left-10 right-10 top-[22px] h-[2px] bg-border z-0">
           <div 
-            className="h-full bg-primary transition-all duration-500" 
+            className="h-full bg-primary transition-all duration-700" 
             style={{ width: `${(currentStepIdx / (steps.length - 1)) * 100}%` }}
           />
         </div>
@@ -61,26 +75,32 @@ const renderOrderStatusStepper = (status: string) => {
         {/* Step Nodes */}
         {steps.map((step, idx) => {
           const isActive = idx <= currentStepIdx;
-          const isCompleted = idx < currentStepIdx;
+          const StepIcon = step.icon;
           return (
-            <div key={step} className="flex flex-col items-center z-10 relative">
+            <div key={step.label} className="flex flex-col items-center z-10 relative">
               <div 
-                className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-all ${
+                className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
                   isActive 
-                    ? 'bg-primary text-primary-foreground border-primary font-bold text-[10px]' 
-                    : 'bg-card text-muted-foreground border-border text-[10px]'
+                    ? 'bg-primary text-primary-foreground border-primary shadow-md scale-110' 
+                    : 'bg-card text-muted-foreground border-border'
                 }`}
               >
-                {isCompleted ? '✓' : idx + 1}
+                <StepIcon className="w-4 h-4" />
               </div>
-              <span className={`text-[9px] uppercase tracking-wider mt-1.5 font-semibold ${
-                isActive ? 'text-primary font-bold' : 'text-muted-foreground'
+              <span className={`text-[9px] uppercase tracking-widest mt-2 font-bold ${
+                isActive ? 'text-primary' : 'text-muted-foreground'
               }`}>
-                {step}
+                {step.label}
               </span>
             </div>
           );
         })}
+      </div>
+
+      {/* Dynamic current state description */}
+      <div className="bg-card border border-border/60 p-3.5 rounded-md text-center shadow-xs max-w-md mx-auto">
+        <p className="font-semibold text-[10px] text-foreground uppercase tracking-widest mb-0.5">Current Status</p>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">{steps[currentStepIdx]?.desc}</p>
       </div>
     </div>
   );

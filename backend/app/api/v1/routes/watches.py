@@ -137,6 +137,17 @@ def get_all_categories(db: Session = Depends(get_db)):
     categories = db.query(Product.category).filter(Product.is_deleted == False).distinct().all()
     return [c[0] for c in categories if c[0]]
 
+@router.get("/suggest", response_model=List[ProductResponse])
+def get_search_suggestions(
+    q: str = Query(..., min_length=1),
+    db: Session = Depends(get_db)
+):
+    suggestions = db.query(Product).options(selectinload(Product.images)).filter(
+        Product.is_deleted == False,
+        (Product.name.ilike(f"%{q}%")) | (Product.brand.ilike(f"%{q}%"))
+    ).limit(5).all()
+    return suggestions
+
 @router.get("/{product_id}", response_model=ProductDetailResponse)
 def get_product_details(product_id: str, db: Session = Depends(get_db)):
     product = db.query(Product).options(selectinload(Product.images)).filter(Product.id == product_id, Product.is_deleted == False).first()

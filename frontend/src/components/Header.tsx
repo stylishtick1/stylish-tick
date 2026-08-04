@@ -62,7 +62,7 @@ export default function Header() {
     setLoadingSuggestions(true);
     setIsSuggestionsOpen(true);
     try {
-      const res = await api.get(`/watches?limit=5&search=${encodeURIComponent(val)}`);
+      const res = await api.get(`/watches/suggest?q=${encodeURIComponent(val)}`);
       setSuggestions(res.data);
     } catch (err) {
       console.error('Error fetching search suggestions:', err);
