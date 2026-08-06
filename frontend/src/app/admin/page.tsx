@@ -160,7 +160,7 @@ export default function AdminAnalyticsPage() {
           )}
         </div>
 
-      </se</section>
+      </section>
 
     </div>
   );
