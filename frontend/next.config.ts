@@ -28,6 +28,5 @@ export default withSentryConfig(analyzer(nextConfig), {
   org: "stylishtick",
   project: "frontend",
   widenClientFileUpload: true,
-  hideSourceMaps: true,
   disableLogger: true,
 });
