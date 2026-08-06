@@ -262,6 +262,7 @@ async def add_security_headers(request, call_next):
     return response
 
 # Mount static files for local uploads
+os.makedirs("static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Include Routers
