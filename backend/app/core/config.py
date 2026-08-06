@@ -1,8 +1,16 @@
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from typing import Optional
 
 class Settings(BaseSettings):
     DATABASE_URL: str
+    
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def convert_postgres_schema(cls, v: str) -> str:
+        if v and v.startswith("postgres://"):
+            return v.replace("postgres://", "postgresql://", 1)
+        return v
     
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"

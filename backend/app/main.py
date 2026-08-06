@@ -225,13 +225,22 @@ async def integrity_exception_handler(request: Request, exc: IntegrityError):
 
 # CORS Middleware
 origins = [origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+if "*" in origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 # Security Headers Middleware
 @app.middleware("http")

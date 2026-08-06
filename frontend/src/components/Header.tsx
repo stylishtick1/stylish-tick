@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { ShoppingCart, User as UserIcon, Menu, X, Sun, Moon, LogOut, Heart, LayoutDashboard, Search } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
@@ -12,8 +12,16 @@ import api from '../services/api';
 
 export default function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, token, isAdmin, logout } = useAuthStore();
   const { getCartCount } = useCartStore();
+
+  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (pathname === href) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
   
   const [isThemeDark, setIsThemeDark] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -156,7 +164,11 @@ export default function Header() {
         <div className="container mx-auto px-4 h-full flex items-center justify-between md:gap-2 lg:gap-4">
           
           {/* Logo */}
-          <Link href="/" className="flex-shrink-0 flex flex-col justify-center select-none group">
+          <Link 
+            href="/" 
+            onClick={(e) => handleLinkClick(e, '/')}
+            className="flex-shrink-0 flex flex-col justify-center select-none group transition-transform duration-300 hover:scale-[1.02]"
+          >
             <span className="text-2xl font-bold tracking-[0.1em] font-luxury gold-text-gradient transition-all duration-300 group-hover:opacity-90">
               STYLISH TICK
             </span>
@@ -173,15 +185,23 @@ export default function Header() {
               { name: 'About', href: '/about' },
               { name: 'FAQ', href: '/faq' },
               { name: 'Contact', href: '/contact' }
-            ].map((link) => (
-              <Link 
-                key={link.name} 
-                href={link.href}
-                className="relative py-2 hover:text-foreground transition-colors whitespace-nowrap after:absolute after:bottom-1 after:left-0 after:h-[1px] after:w-full after:origin-right after:scale-x-0 after:bg-primary after:transition-transform after:duration-300 hover:after:origin-left hover:after:scale-x-100"
-              >
-                {link.name}
-              </Link>
-            ))}
+            ].map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link 
+                  key={link.name} 
+                  href={link.href}
+                  onClick={(e) => handleLinkClick(e, link.href)}
+                  className={`relative py-2 transition-colors duration-300 whitespace-nowrap after:absolute after:bottom-1 after:left-0 after:h-[1px] after:w-full after:transition-transform after:duration-300 
+                    ${isActive 
+                      ? 'text-primary after:bg-primary after:scale-x-100' 
+                      : 'hover:text-foreground after:origin-right after:scale-x-0 after:bg-primary hover:after:origin-left hover:after:scale-x-100'
+                    }`}
+                >
+                  {link.name}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Icons & Controls */}
@@ -436,16 +456,23 @@ export default function Header() {
                 { name: 'Our Heritage', href: '/about' },
                 { name: 'FAQ & Support', href: '/faq' },
                 { name: 'Direct Inquiry', href: '/contact' }
-              ].map((link) => (
-                <Link 
-                  key={link.name} 
-                  href={link.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="hover:text-primary transition-colors py-2 border-b border-border/10 flex items-center justify-center text-center"
-                >
-                  <span>{link.name}</span>
-                </Link>
-              ))}
+              ].map((link) => {
+                const isActive = pathname === link.href;
+                return (
+                  <Link 
+                    key={link.name} 
+                    href={link.href}
+                    onClick={(e) => {
+                      handleLinkClick(e, link.href);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`transition-colors py-2 border-b border-border/10 flex items-center justify-center text-center
+                      ${isActive ? 'text-primary font-bold' : 'hover:text-primary text-muted-foreground'}`}
+                  >
+                    <span>{link.name}</span>
+                  </Link>
+                );
+              })}
             </nav>
 
             <div className="space-y-6 border-t border-border pt-4 text-xs">
