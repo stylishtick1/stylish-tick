@@ -108,9 +108,8 @@ export default function Header() {
   // Sync theme with system / localStorage on mount
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
-    if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+    if (savedTheme === 'dark') {
       document.documentElement.classList.add('dark');
       setIsThemeDark(true);
     } else {
@@ -407,49 +406,23 @@ export default function Header() {
                   </Link>
                 </div>
               )}
-            </div>
-
-            {/* Mobile Menu Toggle */}
+            </div>            {/* Mobile Menu Toggle */}
             <button 
-              onClick={() => setIsMobileMenuOpen(true)}
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="p-2.5 md:hidden text-muted-foreground hover:text-primary rounded-full hover:bg-muted/50 transition-all duration-300"
-              aria-label="Open navigation menu"
+              aria-label="Toggle navigation menu"
             >
-              <Menu className="w-5 h-5" />
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
 
           </div>
         </div>
-      </header>
 
-
-
-      {/* Mobile Menu Dropdown */}
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300" 
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-          {/* Dropdown Content */}
-          <div className="relative w-full bg-card border-b border-border flex flex-col p-6 pb-8 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto animate-slide-down">
-            <div className="flex items-center justify-between border-b border-border pb-4">
-              <div className="flex flex-col">
-                <span className="text-xl font-bold tracking-[0.1em] font-luxury gold-text-gradient">STYLISH TICK</span>
-                <span className="text-[6px] text-muted-foreground tracking-[0.25em] font-mono -mt-1 uppercase">Geneva</span>
-              </div>
-              <button 
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground"
-                aria-label="Close menu"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
+        {/* Mobile Dropdown Menu (Inside header, absolute positioned) */}
+        {isMobileMenuOpen && (
+          <div className="absolute top-full left-0 w-full bg-background border-b border-border shadow-2xl z-50 flex flex-col p-6 pb-8 space-y-6 animate-slide-down md:hidden">
             {/* Navigation links */}
-            <nav className="flex flex-col space-y-2 text-xs font-semibold uppercase tracking-widest">
+            <nav className="flex flex-col space-y-1.5 text-xs font-semibold uppercase tracking-widest text-center">
               {[
                 { name: 'Home', href: '/' },
                 { name: 'Shop Collection', href: '/shop' },
@@ -466,7 +439,7 @@ export default function Header() {
                       handleLinkClick(e, link.href);
                       setIsMobileMenuOpen(false);
                     }}
-                    className={`transition-colors py-2 border-b border-border/10 flex items-center justify-center text-center
+                    className={`transition-colors py-2.5 border-b border-border/10 flex items-center justify-center
                       ${isActive ? 'text-primary font-bold' : 'hover:text-primary text-muted-foreground'}`}
                   >
                     <span>{link.name}</span>
@@ -475,19 +448,19 @@ export default function Header() {
               })}
             </nav>
 
-            <div className="space-y-6 border-t border-border pt-4 text-xs">
+            {/* Bottom Actions & Auth */}
+            <div className="space-y-4 border-t border-border pt-4 text-xs">
               {token ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="text-[10px] text-muted-foreground text-center">
-                    Signed in as <br />
-                    <span className="font-semibold text-foreground break-all">{user?.email || 'Admin'}</span>
+                    Signed in as <span className="font-semibold text-foreground">{user?.email || 'Admin'}</span>
                   </div>
                   <div className="flex flex-col space-y-2">
                     {isAdmin ? (
                       <Link 
                         href="/admin"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="w-full py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground text-center text-[10px] font-bold uppercase tracking-wider rounded transition-all duration-300 shadow-sm"
+                        className="w-full py-2 bg-primary hover:bg-primary-hover text-primary-foreground text-center text-[10px] font-bold uppercase tracking-wider rounded transition-all duration-300"
                       >
                         Admin Panel
                       </Link>
@@ -495,7 +468,7 @@ export default function Header() {
                       <Link 
                         href="/profile"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="w-full py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground text-center text-[10px] font-bold uppercase tracking-wider rounded transition-all duration-300 shadow-sm"
+                        className="w-full py-2 bg-primary hover:bg-primary-hover text-primary-foreground text-center text-[10px] font-bold uppercase tracking-wider rounded transition-all duration-300"
                       >
                         Profile
                       </Link>
@@ -505,7 +478,7 @@ export default function Header() {
                         handleLogoutClick();
                         setIsMobileMenuOpen(false);
                       }}
-                      className="w-full py-2.5 border border-border hover:border-destructive text-destructive hover:bg-destructive/10 text-center text-[10px] font-bold uppercase tracking-wider rounded transition-all duration-300"
+                      className="w-full py-2 border border-border hover:border-destructive text-destructive hover:bg-destructive/10 text-center text-[10px] font-bold uppercase tracking-wider rounded transition-all duration-300"
                     >
                       Log Out
                     </button>
@@ -523,19 +496,23 @@ export default function Header() {
                   <Link 
                     href="/register" 
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="w-full py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground text-center text-[10px] font-bold uppercase tracking-wider rounded transition-all duration-300 shadow-sm"
+                    className="w-full py-2.5 border border-border hover:bg-muted/10 text-foreground text-center text-[10px] font-bold uppercase tracking-wider rounded transition-all duration-300"
                   >
                     Register
                   </Link>
                 </div>
               )}
-              
-              <div className="text-center text-[8px] uppercase tracking-widest text-muted-foreground border-t border-border/40 pt-4">
-                © Stylish Tick Haute Horlogerie
-              </div>
             </div>
           </div>
-        </div>
+        )}
+      </header>
+
+      {/* Backdrop (Outside header) */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity duration-300 z-30 md:hidden" 
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
       )}
 
       {/* Cart Drawer */}

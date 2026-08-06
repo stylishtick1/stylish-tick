@@ -205,7 +205,7 @@ export default function WatchDetailsPage() {
       "@type": "Offer",
       "price": watch.price,
       "priceCurrency": "INR",
-      "availability": watch.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+      "availability": "https://schema.org/InStock"
     },
     ...(watch.reviews.length > 0 ? {
       "aggregateRating": {
@@ -234,11 +234,7 @@ export default function WatchDetailsPage() {
               alt={watch.name}
               className="w-full h-full object-cover transition-all duration-300 hover:scale-110"
             />
-            {watch.stock === 0 && (
-              <span className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center text-white text-xs font-bold uppercase tracking-widest">
-                Out Of Stock
-              </span>
-            )}
+            {/* Out of Stock overlay removed */}
           </div>
           
           {/* Thumbnails */}
@@ -342,105 +338,88 @@ export default function WatchDetailsPage() {
           </p>
 
           {/* Specs icons summary */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-4 border-y border-border/60 py-4 text-[11px] sm:text-xs">
-            <div className="text-center space-y-1">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 border-y border-border/60 py-4 text-[11px] sm:text-xs">
+            <div className="text-center space-y-1 border-r border-border/40">
               <span className="text-muted-foreground uppercase text-[9px] tracking-wider font-semibold">Movement</span>
               <p className="font-semibold text-foreground">{watch.movement_type || 'N/A'}</p>
             </div>
-            <div className="text-center space-y-1 border-x border-border/40">
+            <div className="text-center space-y-1">
               <span className="text-muted-foreground uppercase text-[9px] tracking-wider font-semibold">Water Resist</span>
               <p className="font-semibold text-foreground">{watch.water_resistance || 'N/A'}</p>
-            </div>
-            <div className="text-center space-y-1">
-              <span className="text-muted-foreground uppercase text-[9px] tracking-wider font-semibold">Warranty</span>
-              <p className="font-semibold text-foreground">{watch.warranty_years} Years</p>
             </div>
           </div>
 
           {/* Controls */}
-          {watch.stock > 0 ? (
-            <div className="space-y-4 pt-2">
-              {watch.stock <= 2 && (
-                <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 rounded-lg text-xs font-semibold uppercase tracking-wider flex items-center gap-2 animate-pulse w-fit">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>Hurry! Only {watch.stock} timepiece{watch.stock > 1 ? 's' : ''} left in stock</span>
-                </div>
-              )}
-              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quantity</span>
-                <div className="flex items-center border border-border rounded bg-muted/30">
-                  <button 
-                    onClick={() => quantity > 1 && setQuantity(quantity - 1)}
-                    disabled={quantity <= 1}
-                    className="p-2 hover:bg-muted text-muted-foreground disabled:opacity-30 transition-colors"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-                  <span className="px-4 text-sm font-semibold">{quantity}</span>
-                  <button 
-                    onClick={() => quantity < watch.stock && setQuantity(quantity + 1)}
-                    disabled={quantity >= watch.stock}
-                    className="p-2 hover:bg-muted text-muted-foreground disabled:opacity-30 transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-                <span className="text-xs text-muted-foreground">({watch.stock} units available)</span>
-              </div>
-
-              {/* CTAs */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <div className="flex gap-3 w-full sm:flex-1">
-                  <button
-                    onClick={handleAddToCart}
-                    disabled={addingToCart}
-                    className="flex-1 py-3.5 bg-card border border-primary hover:bg-primary/5 text-primary font-semibold rounded text-xs uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
-                  >
-                    {addingToCart ? (
-                      <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                    ) : actionSuccess ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <ShoppingCart className="w-4 h-4" />
-                    )}
-                    {actionSuccess ? 'Added' : 'Add to Collection'}
-                  </button>
-                  
-                  {isLoggedIn && (
-                    <button
-                      onClick={() => toggleWishlist(watch, isLoggedIn)}
-                      className={`p-3.5 border rounded transition-colors flex items-center justify-center ${isInWishlist(watch.id) ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:border-primary/50 text-muted-foreground'}`}
-                      title="Add to Wishlist"
-                    >
-                      <Heart className={`w-4 h-4 ${isInWishlist(watch.id) ? 'fill-primary' : ''}`} />
-                    </button>
-                  )}
-                </div>
-                
-                <button
-                  onClick={handleBuyNow}
-                  className="w-full sm:flex-1 py-3.5 bg-primary hover:bg-primary-hover text-primary-foreground font-semibold rounded text-xs uppercase tracking-widest transition-colors shadow-lg text-center"
+          <div className="space-y-4 pt-2">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quantity</span>
+              <div className="flex items-center border border-border rounded bg-muted/30">
+                <button 
+                  onClick={() => quantity > 1 && setQuantity(quantity - 1)}
+                  disabled={quantity <= 1}
+                  className="p-2 hover:bg-muted text-muted-foreground disabled:opacity-30 transition-colors"
                 >
-                  Buy Timepiece
+                  <Minus className="w-4 h-4" />
+                </button>
+                <span className="px-4 text-sm font-semibold">{quantity}</span>
+                <button 
+                  onClick={() => quantity < 10 && setQuantity(quantity + 1)}
+                  disabled={quantity >= 10}
+                  className="p-2 hover:bg-muted text-muted-foreground disabled:opacity-30 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
                 </button>
               </div>
+            </div>
 
-              {/* WhatsApp Inquiry CTA */}
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <div className="flex gap-3 w-full sm:flex-1">
+                <button
+                  onClick={handleAddToCart}
+                  disabled={addingToCart}
+                  className="flex-1 py-3.5 bg-card border border-primary hover:bg-primary/5 text-primary font-semibold rounded text-xs uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
+                >
+                  {addingToCart ? (
+                    <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  ) : actionSuccess ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <ShoppingCart className="w-4 h-4" />
+                  )}
+                  {actionSuccess ? 'Added' : 'Add to Collection'}
+                </button>
+                
+                {isLoggedIn && (
+                  <button
+                    onClick={() => toggleWishlist(watch, isLoggedIn)}
+                    className={`p-3.5 border rounded transition-colors flex items-center justify-center ${isInWishlist(watch.id) ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:border-primary/50 text-muted-foreground'}`}
+                    title="Add to Wishlist"
+                  >
+                    <Heart className={`w-4 h-4 ${isInWishlist(watch.id) ? 'fill-primary' : ''}`} />
+                  </button>
+                )}
+              </div>
+              
               <button
-                onClick={handleWhatsAppInquiry}
-                className="w-full py-3.5 bg-[#25D366] hover:bg-[#20ba5a] text-white font-semibold rounded text-xs uppercase tracking-widest transition-colors shadow-md text-center flex items-center justify-center gap-2 mt-3"
+                onClick={handleBuyNow}
+                className="w-full sm:flex-1 py-3.5 bg-primary hover:bg-primary-hover text-primary-foreground font-semibold rounded text-xs uppercase tracking-widest transition-colors shadow-lg text-center"
               >
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.067 5.448 5.513.002 12.224 0c3.25.002 6.305 1.268 8.604 3.567 2.3 2.3 3.561 5.357 3.559 8.611-.004 6.776-5.451 12.22-12.219 12.221h-.003c-2.013-.002-3.993-.493-5.779-1.428L0 24zm6.59-4.846c1.6.95 2.72 1.488 4.28 1.488h.01c5.54-.002 10.05-4.51 10.054-10.05.002-2.684-1.038-5.207-2.93-7.098C16.02 1.597 13.5 1.558 10.82 1.558 5.28 1.56 2.76 6.07 2.76 11.61c-.002 1.63.43 3.22 1.25 4.63l-1.03 3.75 3.87-.99zM15.76 13.43c-.28-.14-1.68-.83-1.94-.93-.26-.1-.45-.15-.64.15-.19.29-.73.93-.9 1.12-.17.19-.34.22-.62.08-.28-.14-1.2-.44-2.28-1.4-.84-.75-1.41-1.68-1.57-1.96-.17-.28-.02-.43.12-.57.13-.13.28-.33.43-.49.14-.17.19-.28.28-.47.1-.19.05-.36-.02-.5-.08-.14-.64-1.55-.88-2.12-.23-.56-.47-.48-.64-.49-.17-.01-.36-.01-.56-.01-.19 0-.5.07-.77.36-.26.29-1.02 1-1.02 2.43 0 1.44 1.05 2.82 1.2 3 .15.19 2.07 3.16 5.02 4.43.7.3 1.25.48 1.68.62.71.22 1.35.19 1.86.11.57-.08 1.68-.69 1.92-1.36.24-.67.24-1.25.17-1.36-.07-.11-.26-.18-.54-.32z"/>
-                </svg>
-                Inquire on WhatsApp
+                Buy Timepiece
               </button>
             </div>
-          ) : (
-            <div className="p-4 bg-muted border border-border text-muted-foreground text-center rounded text-sm font-semibold">
-              Currently Unavailable (Sold Out)
-            </div>
-          )}
+
+            {/* WhatsApp Inquiry CTA */}
+            <button
+              onClick={handleWhatsAppInquiry}
+              className="w-full py-3.5 bg-[#25D366] hover:bg-[#20ba5a] text-white font-semibold rounded text-xs uppercase tracking-widest transition-colors shadow-md text-center flex items-center justify-center gap-2 mt-3"
+            >
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.067 5.448 5.513.002 12.224 0c3.25.002 6.305 1.268 8.604 3.567 2.3 2.3 3.561 5.357 3.559 8.611-.004 6.776-5.451 12.22-12.219 12.221h-.003c-2.013-.002-3.993-.493-5.779-1.428L0 24zm6.59-4.846c1.6.95 2.72 1.488 4.28 1.488h.01c5.54-.002 10.05-4.51 10.054-10.05.002-2.684-1.038-5.207-2.93-7.098C16.02 1.597 13.5 1.558 10.82 1.558 5.28 1.56 2.76 6.07 2.76 11.61c-.002 1.63.43 3.22 1.25 4.63l-1.03 3.75 3.87-.99zM15.76 13.43c-.28-.14-1.68-.83-1.94-.93-.26-.1-.45-.15-.64.15-.19.29-.73.93-.9 1.12-.17.19-.34.22-.62.08-.28-.14-1.2-.44-2.28-1.4-.84-.75-1.41-1.68-1.57-1.96-.17-.28-.02-.43.12-.57.13-.13.28-.33.43-.49.14-.17.19-.28.28-.47.1-.19.05-.36-.02-.5-.08-.14-.64-1.55-.88-2.12-.23-.56-.47-.48-.64-.49-.17-.01-.36-.01-.56-.01-.19 0-.5.07-.77.36-.26.29-1.02 1-1.02 2.43 0 1.44 1.05 2.82 1.2 3 .15.19 2.07 3.16 5.02 4.43.7.3 1.25.48 1.68.62.71.22 1.35.19 1.86.11.57-.08 1.68-.69 1.92-1.36.24-.67.24-1.25.17-1.36-.07-.11-.26-.18-.54-.32z"/>
+              </svg>
+              Inquire on WhatsApp
+            </button>
+          </div>
 
           {/* Boutique Trust badges */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 border-t border-border/40 text-[10px] text-muted-foreground">
@@ -482,10 +461,6 @@ export default function WatchDetailsPage() {
           <div className="flex justify-between py-2 border-b border-border/50">
             <span className="text-muted-foreground">Movement</span>
             <span className="font-semibold">{watch.movement_type || 'Swiss Automatic'}</span>
-          </div>
-          <div className="flex justify-between py-2 border-b border-border/50">
-            <span className="text-muted-foreground">Boutique Warranty</span>
-            <span className="font-semibold">{watch.warranty_years} Years</span>
           </div>
         </div>
       </section>

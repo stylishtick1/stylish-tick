@@ -59,14 +59,6 @@ def place_order(
                     detail=f"Product with ID '{item.product_id}' is no longer available."
                 )
                 
-            if product.stock < item.quantity:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Insufficient stock for '{product.name}'. In stock: {product.stock}, Requested: {item.quantity}"
-                )
-                
-            # Deduct stock
-            product.stock -= item.quantity
             item_total = product.price * item.quantity
             total_amount += item_total
             

@@ -50,7 +50,7 @@ export default function HomePage() {
     <div className="space-y-24 pb-20">
 
       {/* 1. HERO SECTION */}
-      <section className="relative h-screen flex items-center bg-black overflow-hidden">
+      <section className="relative min-h-screen flex items-center bg-black overflow-hidden py-20 md:py-0">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
           <Image
@@ -59,35 +59,107 @@ export default function HomePage() {
             fill
             priority
             sizes="100vw"
-            className="w-full h-full object-cover opacity-50 scale-105 animate-[pulse_10s_infinite]"
+            className="w-full h-full object-cover opacity-45 sm:opacity-50 scale-105 animate-[pulse_10s_infinite]"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+          {/* Overlay gradient: darker on mobile for perfect readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/95 via-black/75 to-black/95 md:bg-gradient-to-r md:from-black/90 md:via-black/50 md:to-transparent" />
         </div>
 
-        <div className="container mx-auto px-4 z-10 text-white space-y-6 max-w-4xl">
-          <p className="text-xs uppercase tracking-[0.3em] text-primary font-semibold">
+        <div className="container mx-auto px-4 z-10 text-white space-y-6 max-w-4xl text-center md:text-left flex flex-col items-center md:items-start">
+          <p className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-primary font-semibold">
             Define Your Legacy
           </p>
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-light tracking-tight leading-none font-luxury">
-            Timeless Luxury, <br />
-            <span className="font-semibold gold-text-gradient">Pure Precision.</span>
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-light tracking-tight leading-tight md:leading-none font-luxury">
+            Timeless Luxury, <br className="hidden sm:inline" />
+            <span className="font-semibold gold-text-gradient block sm:inline mt-1 sm:mt-0">Pure Precision.</span>
           </h1>
-          <p className="text-sm md:text-base text-gray-300 font-light max-w-xl leading-relaxed">
+          <p className="text-xs sm:text-sm md:text-base text-gray-300 font-light max-w-xl leading-relaxed">
             Discover our curated collection of heritage Swiss calibres and modern masterpieces. Crafted for those who appreciate the finer details of time.
           </p>
-          <div className="pt-4 flex flex-wrap gap-4">
+          <div className="pt-4 flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto">
             <Link
               href="/shop"
-              className="px-8 py-3.5 bg-primary hover:bg-primary-hover text-primary-foreground font-semibold rounded text-xs uppercase tracking-wider transition-all duration-300 shadow-lg"
+              className="w-full sm:w-auto text-center px-8 py-3.5 bg-primary hover:bg-primary-hover text-primary-foreground font-semibold rounded text-xs uppercase tracking-wider transition-all duration-300 shadow-lg"
             >
               Explore Collection
             </Link>
             <Link
               href="/about"
-              className="px-8 py-3.5 border border-white/30 hover:border-white text-white hover:bg-white/10 font-semibold rounded text-xs uppercase tracking-wider transition-all duration-300"
+              className="w-full sm:w-auto text-center px-8 py-3.5 border border-white/30 hover:border-white text-white hover:bg-white/10 font-semibold rounded text-xs uppercase tracking-wider transition-all duration-300"
             >
               Our Heritage
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 1.5 STATISTICS BANNER */}
+      <section className="w-full bg-card border-y border-border/30 py-8 lg:py-10">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-4 items-center">
+            {[
+              {
+                icon: (
+                  <svg className="w-8 h-8 md:w-10 md:h-10 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="6" />
+                    <path d="M12 2v4" />
+                    <path d="M12 18v4" />
+                    <path d="M4.93 10.17a8 8 0 0 1 14.14 0" />
+                    <path d="M19.07 13.83a8 8 0 0 1-14.14 0" />
+                    <polyline points="12 9 12 12 13.5 13.5" />
+                  </svg>
+                ),
+                value: "15,000+",
+                label: "Watches Sold"
+              },
+              {
+                icon: (
+                  <svg className="w-8 h-8 md:w-10 md:h-10 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                ),
+                value: "50+",
+                label: "Luxury Brands"
+              },
+              {
+                icon: (
+                  <svg className="w-8 h-8 md:w-10 md:h-10 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="2" y1="12" x2="22" y2="12" />
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                  </svg>
+                ),
+                value: "25",
+                label: "Countries Served"
+              },
+              {
+                icon: (
+                  <svg className="w-8 h-8 md:w-10 md:h-10 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <polyline points="9 11 11 13 15 9" />
+                  </svg>
+                ),
+                value: "100%",
+                label: "Authenticity Guarantee"
+              }
+            ].map((stat, idx) => (
+              <div 
+                key={idx} 
+                className="flex flex-col sm:flex-row items-center sm:items-start justify-center text-center sm:text-left gap-3 md:gap-4 md:border-r last:md:border-r-0 border-border/20 px-2"
+              >
+                <div className="flex-shrink-0">
+                  {stat.icon}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xl md:text-2xl font-serif font-bold text-primary leading-none tracking-wide">
+                    {stat.value}
+                  </span>
+                  <span className="text-[9px] md:text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold mt-1.5">
+                    {stat.label}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -100,14 +172,14 @@ export default function HomePage() {
           <p className="text-xs text-muted-foreground uppercase tracking-widest pt-2">Craftsmanship from legendary makers</p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
+        <div className="flex md:grid overflow-x-auto md:overflow-visible snap-x snap-mandatory md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 pb-4 md:pb-0 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {brands.map((b) => (
             <Link
               key={b.name}
               href={`/shop?brand=${b.name}`}
-              className="group relative h-48 rounded-lg overflow-hidden border border-border/40 bg-card flex flex-col justify-end p-4 transition-all duration-300 hover:border-primary"
+              className="group relative h-44 md:h-48 w-[140px] min-w-[140px] md:w-auto md:min-w-0 snap-align-start rounded-lg overflow-hidden border border-border/40 bg-card flex flex-col justify-end p-4 transition-all duration-300 hover:border-primary"
             >
-              <div className="absolute inset-0 z-0 opacity-40 group-hover:scale-110 transition-transform duration-500">
+              <div className="absolute inset-0 z-0 opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500">
                 <Image src={b.image} alt={b.name} fill sizes="(max-width: 640px) 50vw, 20vw" className="w-full h-full object-cover" />
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />
