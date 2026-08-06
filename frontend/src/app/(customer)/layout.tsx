@@ -10,7 +10,7 @@ export default function CustomerLayout({
   return (
     <div className="min-h-screen flex flex-col relative">
       <Header />
-      <main className="container mx-auto flex-1 bg-background text-foreground">
+      <main className="container mx-auto px-4 md:px-6 lg:px-8 flex-1 bg-background text-foreground">
         {children}
       </main>
       <Footer />

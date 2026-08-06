@@ -38,7 +38,7 @@ export default function AdminWatchesPage() {
     brand: '',
     description: '',
     price: 0,
-    stock: 0,
+    stock: 999,
     category: '',
     movement_type: '',
     strap_material: '',
@@ -77,12 +77,12 @@ export default function AdminWatchesPage() {
       brand: '',
       description: '',
       price: 0,
-      stock: 0,
+      stock: 999,
       category: '',
       movement_type: '',
       strap_material: '',
       water_resistance: '',
-      warranty_years: 2,
+      warranty_years: 1,
       featured: false,
       parent_id: '',
       images: []
@@ -287,7 +287,6 @@ export default function AdminWatchesPage() {
                 <th className="p-4">Brand / Name</th>
                 <th className="p-4">Category</th>
                 <th className="p-4">Price</th>
-                <th className="p-4">Stock</th>
                 <th className="p-4">Featured</th>
                 <th className="p-4 text-right">Actions</th>
               </tr>
@@ -308,11 +307,6 @@ export default function AdminWatchesPage() {
                     </td>
                     <td className="p-4">{watch.category}</td>
                     <td className="p-4 font-mono font-semibold text-primary">₹{watch.price.toLocaleString()}</td>
-                    <td className="p-4">
-                      <span className={`px-2 py-0.5 rounded font-semibold ${watch.stock > 0 ? 'text-emerald-700 bg-emerald-50' : 'text-red-700 bg-red-50'}`}>
-                        {watch.stock} Left
-                      </span>
-                    </td>
                     <td className="p-4">
                       {watch.featured ? (
                         <span className="text-primary font-semibold">Yes</span>
@@ -445,7 +439,7 @@ export default function AdminWatchesPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-[10px] uppercase font-bold tracking-wider text-zinc-500">Price (INR) *</label>
                   <input 
@@ -454,18 +448,6 @@ export default function AdminWatchesPage() {
                     required
                     min={0}
                     value={formData.price}
-                    onChange={handleInputChange}
-                    className="w-full bg-white border border-zinc-200 text-zinc-900 focus:border-primary/50 rounded px-3 py-2 outline-none"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-bold tracking-wider text-zinc-500">Stock Level *</label>
-                  <input 
-                    type="number" 
-                    name="stock"
-                    required
-                    min={0}
-                    value={formData.stock}
                     onChange={handleInputChange}
                     className="w-full bg-white border border-zinc-200 text-zinc-900 focus:border-primary/50 rounded px-3 py-2 outline-none"
                   />
@@ -485,18 +467,6 @@ export default function AdminWatchesPage() {
                     <option value="Dress">Dress</option>
                     <option value="Pilot">Pilot</option>
                   </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-bold tracking-wider text-zinc-500">Warranty (Years) *</label>
-                  <input 
-                    type="number" 
-                    name="warranty_years"
-                    required
-                    min={1}
-                    value={formData.warranty_years}
-                    onChange={handleInputChange}
-                    className="w-full bg-white border border-zinc-200 text-zinc-900 focus:border-primary/50 rounded px-3 py-2 outline-none"
-                  />
                 </div>
               </div>
 

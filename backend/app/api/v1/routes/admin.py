@@ -68,6 +68,11 @@ def create_product(
     admin: str = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
+    # Ensure default warranty_years in specifications
+    specs = product_data.specifications or {}
+    if "warranty_years" not in specs:
+        specs["warranty_years"] = 2
+
     # Create the product object
     new_product = Product(
         name=product_data.name,
@@ -78,7 +83,7 @@ def create_product(
         category=product_data.category,
         featured=product_data.featured,
         parent_id=product_data.parent_id,
-        specifications=product_data.specifications or {}
+        specifications=specs
     )
     db.add(new_product)
     db.commit()

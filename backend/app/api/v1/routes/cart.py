@@ -40,11 +40,7 @@ def add_to_cart(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
         
-    if product.stock < item_data.quantity:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Only {product.stock} units are currently in stock."
-        )
+
 
     # Check if item is already in cart
     cart_item = db.query(CartItem).filter(
@@ -54,11 +50,7 @@ def add_to_cart(
     
     if cart_item:
         new_quantity = cart_item.quantity + item_data.quantity
-        if product.stock < new_quantity:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Cannot add more. Stock limit reached. Current in cart: {cart_item.quantity}"
-            )
+
         cart_item.quantity = new_quantity
     else:
         cart_item = CartItem(
@@ -86,11 +78,7 @@ def update_cart_item(
         
     # Verify stock
     product = db.query(Product).filter(Product.id == cart_item.product_id).first()
-    if product.stock < item_data.quantity:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Only {product.stock} units in stock. Cannot update quantity to {item_data.quantity}."
-        )
+
         
     cart_item.quantity = item_data.quantity
     db.commit()

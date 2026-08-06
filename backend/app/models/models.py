@@ -30,7 +30,7 @@ class Product(Base):
     brand = Column(String, index=True, nullable=False)
     description = Column(String, nullable=True)
     price = Column(Float, index=True, nullable=False)
-    stock = Column(Integer, default=0)
+    stock = Column(Integer, default=999)
     category = Column(String, index=True, nullable=False)  # e.g. Male Watches, Female Watches, Premium Watches, Shoes, Premium Shoes
     parent_id = Column(String, ForeignKey("products.id"), nullable=True)
     featured = Column(Boolean, default=False)

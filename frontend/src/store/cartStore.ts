@@ -76,9 +76,6 @@ export const useCartStore = create<CartState>((set, get) => ({
       
       if (existingItemIdx !== -1) {
         const newQty = currentItems[existingItemIdx].quantity + quantity;
-        if (watch.stock < newQty) {
-          throw new Error(`Only ${watch.stock} units in stock.`);
-        }
         currentItems[existingItemIdx].quantity = newQty;
       } else {
         currentItems.push({
@@ -109,9 +106,7 @@ export const useCartStore = create<CartState>((set, get) => ({
       // Local guest update
       const currentItems = get().items.map(item => {
         if (item.watch_id === watchId) {
-          if (item.watch.stock < quantity) {
-            throw new Error(`Only ${item.watch.stock} units in stock.`);
-          }
+
           return { ...item, quantity };
         }
         return item;

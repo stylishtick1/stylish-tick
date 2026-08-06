@@ -69,7 +69,7 @@ class ProductBase(BaseModel):
     brand: str
     description: Optional[str] = None
     price: float = Field(..., gt=0)
-    stock: int = Field(..., ge=0)
+    stock: Optional[int] = Field(999, ge=0)
     category: str
     featured: bool = False
     is_curated_trending: bool = False

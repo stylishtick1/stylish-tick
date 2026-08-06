@@ -17,7 +17,6 @@ def list_products(
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
     movement_type: Optional[str] = None,
-    in_stock: Optional[bool] = None,
     featured: Optional[bool] = None,
     is_curated_trending: Optional[bool] = None,
     sort_by: Optional[str] = Query(None, description="price_asc, price_desc, newest"),
@@ -48,10 +47,6 @@ def list_products(
         query = query.filter(Product.price <= max_price)
     if movement_type:
         query = query.filter(Product.specifications['movement_type'].astext == movement_type)
-    if in_stock is True:
-        query = query.filter(Product.stock > 0)
-    elif in_stock is False:
-        query = query.filter(Product.stock == 0)
     if featured is not None:
         query = query.filter(Product.featured == featured)
     if is_curated_trending is not None:
