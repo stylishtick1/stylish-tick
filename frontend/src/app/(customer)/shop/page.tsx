@@ -69,7 +69,9 @@ function ShopContent() {
     async function fetchFilterOptions() {
       try {
         const catsRes = await api.get('/watches/categories');
-        setAvailableCategories(catsRes.data);
+        const defaultCats = ["Male Watches", "Female Watches", "Premium Watches", "Shoes"];
+        const combined = Array.from(new Set([...defaultCats, ...(catsRes.data || [])]));
+        setAvailableCategories(combined);
       } catch (err) {
         console.error('Failed to load filter metadata:', err);
       }

@@ -1,12 +1,23 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Search, Eye, Edit, X, ShieldAlert, CheckCircle, Package } from 'lucide-react';
+import { Search, Eye, Edit, X, ShieldAlert, CheckCircle, Package, User, Mail, Phone, MapPin, MessageCircle } from 'lucide-react';
 import api from '../../../services/api';
+
+interface ProductInfo {
+  id?: string;
+  name: string;
+  brand: string;
+  price: number;
+  description?: string;
+  category?: string;
+  images?: Array<{ image_url: string; image_type?: string }>;
+}
 
 interface OrderItem {
   id: number;
-  watch: { name: string; brand: string; price: number };
+  product?: ProductInfo;
+  watch?: ProductInfo;
   quantity: number;
   price: number;
 }
@@ -26,6 +37,7 @@ interface Order {
   created_at: string;
   user_name: string;
   user_email: string;
+  user_phone?: string;
   items: OrderItem[];
 }
 
@@ -105,12 +117,21 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const getItemVisual = (item: OrderItem) => {
+    const info = item.product || item.watch;
+    const imgUrl = info?.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1547996160-81dfa63595aa?q=80&w=200';
+    const name = info?.name || 'Product';
+    const brand = info?.brand || '';
+    const description = info?.description || 'No description provided.';
+    return { imgUrl, name, brand, description };
+  };
+
   return (
     <div className="space-y-6 text-zinc-950">
       
       <div>
         <h1 className="text-2xl font-light tracking-widest font-luxury uppercase text-zinc-900">Order Registry</h1>
-        <p className="text-xs text-zinc-500 uppercase tracking-widest pt-1">Inspect transactions & update shipment stages</p>
+        <p className="text-xs text-zinc-500 uppercase tracking-widest pt-1">Inspect customer transactions, shipping addresses & acquired items</p>
       </div>
 
       {error && (
@@ -161,7 +182,8 @@ export default function AdminOrdersPage() {
             <thead>
               <tr className="border-b border-zinc-100 text-zinc-500 uppercase tracking-wider text-[10px]">
                 <th className="p-4">Order Ref</th>
-                <th className="p-4">Customer</th>
+                <th className="p-4">Customer Details</th>
+                <th className="p-4">Products / Photo</th>
                 <th className="p-4">Date</th>
                 <th className="p-4">Amount</th>
                 <th className="p-4">Shipment</th>
@@ -173,13 +195,51 @@ export default function AdminOrdersPage() {
               {orders.map((o) => (
                 <tr key={o.id} className="hover:bg-zinc-50/50">
                   <td className="p-4 font-semibold text-primary">{o.order_number}</td>
-                  <td className="p-4">
-                    <p className="font-semibold text-zinc-800">{o.user_name}</p>
-                    <p className="text-[10px] text-zinc-500">{o.user_email}</p>
+                  <td className="p-4 min-w-[200px] space-y-1">
+                    <p className="font-bold text-zinc-900 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-primary" /> {o.user_name}
+                    </p>
+                    <p className="text-[10px] text-zinc-600 flex items-center gap-1">
+                      <Mail className="w-3 h-3 text-zinc-400" /> {o.user_email}
+                    </p>
+                    {o.user_phone && (
+                      <p className="text-[10px] text-emerald-700 font-medium flex items-center gap-1">
+                        <Phone className="w-3 h-3" /> {o.user_phone}
+                      </p>
+                    )}
+                    <p className="text-[10px] text-zinc-500 flex items-start gap-1 pt-0.5 border-t border-zinc-100 mt-1">
+                      <MapPin className="w-3 h-3 text-zinc-400 flex-shrink-0 mt-0.5" />
+                      <span>{o.shipping_address}, {o.city}, {o.state} - {o.postal_code}</span>
+                    </p>
                   </td>
-                  <td className="p-4">{new Date(o.created_at).toLocaleDateString()}</td>
-                  <td className="p-4 font-mono font-semibold text-zinc-900">₹{o.total_amount.toLocaleString()}</td>
-                  <td className="p-4">
+                  <td className="p-4 min-w-[220px]">
+                    {o.items && o.items.length > 0 ? (
+                      <div className="space-y-2">
+                        {o.items.map((item) => {
+                          const { imgUrl, name, brand, description } = getItemVisual(item);
+                          return (
+                            <div key={item.id} className="flex items-center gap-3">
+                              <img 
+                                src={imgUrl} 
+                                alt={name}
+                                className="w-11 h-11 object-cover rounded border border-zinc-200 shadow-xs flex-shrink-0"
+                              />
+                              <div className="space-y-0.5">
+                                <p className="font-semibold text-zinc-900 line-clamp-1">{name}</p>
+                                <p className="text-[10px] text-primary uppercase font-bold">{brand} <span className="text-zinc-500 font-normal ml-1">× {item.quantity}</span></p>
+                                <p className="text-[10px] text-zinc-500 line-clamp-1 italic">{description}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <span className="text-zinc-400 italic text-[10px]">No item details</span>
+                    )}
+                  </td>
+                  <td className="p-4 whitespace-nowrap">{new Date(o.created_at).toLocaleDateString()}</td>
+                  <td className="p-4 font-mono font-semibold text-zinc-900 whitespace-nowrap">₹{o.total_amount.toLocaleString()}</td>
+                  <td className="p-4 whitespace-nowrap">
                     <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
                       o.status === 'Delivered' ? 'bg-primary/10 text-primary' : 
                       o.status === 'Cancelled' ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-zinc-100 text-zinc-800'
@@ -187,7 +247,7 @@ export default function AdminOrdersPage() {
                       {o.status}
                     </span>
                   </td>
-                  <td className="p-4">
+                  <td className="p-4 whitespace-nowrap">
                     <span className={`px-2 py-0.5 rounded font-semibold ${
                       o.payment_status === 'Paid' ? 'text-emerald-700 bg-emerald-50' : 
                       o.payment_status === 'Awaiting Verification' ? 'text-amber-600 bg-amber-50 border border-amber-100 animate-pulse' : 'text-zinc-600 bg-zinc-100'
@@ -195,7 +255,7 @@ export default function AdminOrdersPage() {
                       {o.payment_status}
                     </span>
                   </td>
-                  <td className="p-4 text-right space-x-2">
+                  <td className="p-4 text-right space-x-2 whitespace-nowrap">
                     <button
                       onClick={() => setInspectingOrder(o)}
                       className="p-1.5 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 rounded"
@@ -223,10 +283,10 @@ export default function AdminOrdersPage() {
         <div className="fixed inset-0 z-50 overflow-hidden flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-xs" onClick={() => setInspectingOrder(null)} />
           
-          <div className="bg-white border border-zinc-200 w-full max-w-xl rounded-lg shadow-2xl z-10 flex flex-col max-h-[85vh]">
+          <div className="bg-white border border-zinc-200 w-full max-w-2xl rounded-lg shadow-2xl z-10 flex flex-col max-h-[85vh]">
             <div className="p-5 border-b border-zinc-100 flex justify-between items-center">
               <div>
-                <h3 className="font-semibold text-sm uppercase tracking-wider text-zinc-800">Acquisition Details</h3>
+                <h3 className="font-semibold text-sm uppercase tracking-wider text-zinc-800">Acquisition Details & Products</h3>
                 <p className="text-[10px] text-primary uppercase font-bold">{inspectingOrder.order_number}</p>
               </div>
               <button onClick={() => setInspectingOrder(null)} className="p-1 text-zinc-400 hover:text-zinc-800 rounded">
@@ -236,42 +296,83 @@ export default function AdminOrdersPage() {
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs text-zinc-600">
               
-              {/* Shipping info */}
-              <div className="grid grid-cols-2 gap-4 border-b border-zinc-100 pb-4">
-                <div className="space-y-1">
-                  <span className="text-[10px] uppercase font-bold text-primary tracking-wider">Courier Address</span>
-                  <p className="text-zinc-800">{inspectingOrder.shipping_address}</p>
-                  <p>{inspectingOrder.city}, {inspectingOrder.state}, {inspectingOrder.postal_code}</p>
-                  <p>{inspectingOrder.country}</p>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-[10px] uppercase font-bold text-primary tracking-wider">Transaction Summary</span>
-                  <p>Method: <span className="text-zinc-800">{inspectingOrder.payment_method}</span></p>
-                  <p>Settlement: <span className="font-semibold text-emerald-700">{inspectingOrder.payment_status}</span></p>
-                  <p>Date: <span>{new Date(inspectingOrder.created_at).toLocaleString()}</span></p>
-                </div>
-              </div>
-
-              {/* Items list */}
-              <div className="space-y-3">
-                <span className="text-[10px] uppercase font-bold text-primary tracking-wider">Acquired timepieces</span>
-                {inspectingOrder.items.map((item) => (
-                  <div key={item.id} className="flex justify-between items-center py-2 border-b border-zinc-100 last:border-none">
-                    <div>
-                      <p className="font-semibold text-zinc-800">{item.watch.name}</p>
-                      <p className="text-[10px] text-zinc-500">{item.watch.brand}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-zinc-800">₹{item.price.toLocaleString()}</p>
-                      <p className="text-[10px]">Qty: {item.quantity}</p>
-                    </div>
+              {/* Customer & Shipping info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-50 border border-zinc-200/80 p-4 rounded-lg">
+                <div className="space-y-1.5">
+                  <span className="text-[10px] uppercase font-bold text-primary tracking-wider flex items-center gap-1">
+                    <User className="w-3 h-3" /> Customer Contact Details
+                  </span>
+                  <p className="text-zinc-900 font-bold text-sm">{inspectingOrder.user_name}</p>
+                  <p className="text-zinc-700 flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-zinc-400" /> {inspectingOrder.user_email}
+                  </p>
+                  {inspectingOrder.user_phone && (
+                    <p className="text-emerald-700 font-medium flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5" /> {inspectingOrder.user_phone}
+                    </p>
+                  )}
+                  <div className="pt-2">
+                    <a 
+                      href={`https://wa.me/919699986430?text=${encodeURIComponent(`Hello ${inspectingOrder.user_name}, regard your order #${inspectingOrder.order_number} at StylishTick...`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-[11px] font-semibold transition-colors shadow-xs"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" /> Contact via WhatsApp
+                    </a>
                   </div>
-                ))}
+                </div>
+
+                <div className="space-y-1.5">
+                  <span className="text-[10px] uppercase font-bold text-primary tracking-wider flex items-center gap-1">
+                    <MapPin className="w-3 h-3" /> Courier Delivery Address
+                  </span>
+                  <p className="text-zinc-800 font-semibold">{inspectingOrder.shipping_address}</p>
+                  <p className="text-zinc-700">{inspectingOrder.city}, {inspectingOrder.state}</p>
+                  <p className="text-zinc-700">Pincode: <span className="font-mono font-semibold">{inspectingOrder.postal_code}</span></p>
+                  <p className="text-zinc-700">{inspectingOrder.country}</p>
+                  <div className="pt-1 text-[11px]">
+                    <span className="text-zinc-500">Method: </span>
+                    <span className="text-zinc-900 font-semibold">{inspectingOrder.payment_method}</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex justify-between pt-2 text-sm font-semibold border-t border-zinc-100">
+              {/* Items list with Image & Description */}
+              <div className="space-y-4">
+                <span className="text-[10px] uppercase font-bold text-primary tracking-wider">Purchased Products ({inspectingOrder.items.length})</span>
+                {inspectingOrder.items.map((item) => {
+                  const { imgUrl, name, brand, description } = getItemVisual(item);
+                  return (
+                    <div key={item.id} className="flex gap-4 p-3 bg-zinc-50 border border-zinc-100 rounded-lg items-start">
+                      <img 
+                        src={imgUrl} 
+                        alt={name} 
+                        className="w-16 h-16 object-cover rounded border border-zinc-200 shadow-xs flex-shrink-0"
+                      />
+                      <div className="flex-1 space-y-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-bold text-zinc-900 text-sm">{name}</h4>
+                            <p className="text-[10px] font-semibold text-primary uppercase tracking-wider">{brand}</p>
+                          </div>
+                          <div className="text-right font-mono">
+                            <p className="font-bold text-zinc-900">₹{item.price.toLocaleString()}</p>
+                            <p className="text-[10px] text-zinc-500">Qty: {item.quantity}</p>
+                          </div>
+                        </div>
+                        <p className="text-zinc-600 text-[11px] leading-relaxed pt-1 border-t border-zinc-200/60 mt-1">
+                          {description}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex justify-between pt-3 text-base font-semibold border-t border-zinc-200">
                 <span>Grand Total</span>
-                <span className="text-primary font-mono">₹{inspectingOrder.total_amount.toLocaleString()}</span>
+                <span className="text-primary font-mono font-bold">₹{inspectingOrder.total_amount.toLocaleString()}</span>
               </div>
 
             </div>
