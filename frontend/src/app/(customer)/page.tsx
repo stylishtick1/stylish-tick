@@ -39,11 +39,11 @@ export default function HomePage() {
   }, []);
 
   const brands = [
-    { name: 'Rolex', logo: 'R', image: 'https://images.unsplash.com/photo-1547996160-81dfa63595aa?q=80&w=300' },
-    { name: 'Omega', logo: 'Ω', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=300' },
-    { name: 'Tommy Hilfiger', logo: 'H', image: 'https://images.unsplash.com/photo-1509048191080-d2984bad6ae5?q=80&w=300' },
-    { name: 'Titan', logo: 'T', image: 'https://images.unsplash.com/photo-1612817288484-6f916006741a?q=80&w=300' },
-    { name: 'Fossil', logo: 'F', image: 'https://images.unsplash.com/photo-1524592094714-0f0654e20314?q=80&w=300' }
+    { name: 'Rolex', logo: 'R', image: 'https://res.cloudinary.com/hdt2geyf/image/upload/v1786342465/rolex_image_isubqd.jpg' },
+    { name: 'Omega', logo: 'Ω', image: 'https://res.cloudinary.com/hdt2geyf/image/upload/v1786342464/omega_yadmun.jpg' },
+    { name: 'Tommy Hilfiger', logo: 'H', image: 'https://res.cloudinary.com/hdt2geyf/image/upload/v1786342465/tommy_hilfiger_image_gl6ynk.jpg' },
+    { name: 'Burberry', logo: 'B', image: 'https://res.cloudinary.com/hdt2geyf/image/upload/v1786342464/burberry_girls_watch_u5tb2e.jpg' },
+    { name: 'Calvin Klein', logo: 'CK', image: 'https://res.cloudinary.com/hdt2geyf/image/upload/v1786342464/ck_image_vsaeiq.jpg' }
   ];
 
   return (
@@ -208,7 +208,7 @@ export default function HomePage() {
               title: "Gentlemen’s Horology",
               tagline: "Timeless precision for men.",
               link: "/shop?category=Male Watches",
-              image: "https://images.unsplash.com/photo-1622434641406-a158123450f9?q=80&w=600",
+              image: "https://res.cloudinary.com/hdt2geyf/image/upload/v1786343633/masterpeice_wos6pb.jpg",
               span: "md:col-span-3",
               height: "h-[380px]"
             },
@@ -216,7 +216,7 @@ export default function HomePage() {
               title: "Ladies' Elegance",
               tagline: "Grace and sophistication.",
               link: "/shop?category=Female Watches",
-              image: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?q=80&w=600",
+              image: "https://res.cloudinary.com/hdt2geyf/image/upload/v1786342465/girls_watch_ecmc3f.jpg",
               span: "md:col-span-3",
               height: "h-[380px]"
             },
@@ -224,7 +224,7 @@ export default function HomePage() {
               title: "Haute Horlogerie",
               tagline: "Masterpiece complications for collectors.",
               link: "/shop?category=Premium Watches",
-              image: "https://images.unsplash.com/photo-1542496658-e33a6d0d50f6?q=80&w=600",
+              image: "https://res.cloudinary.com/hdt2geyf/image/upload/v1786343634/gentlemans_r6wsnn.jpg",
               span: "md:col-span-2",
               height: "h-[320px]"
             },
@@ -240,7 +240,7 @@ export default function HomePage() {
               title: "Contemporary Elite",
               tagline: "Modern luxury in motion.",
               link: "/shop?category=Shoes",
-              image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?q=80&w=600",
+              image: "https://res.cloudinary.com/hdt2geyf/image/upload/v1786342465/shoes_image_uqug05.jpg",
               span: "md:col-span-2",
               height: "h-[320px]"
             }
