@@ -52,6 +52,7 @@ export default function AdminWatchesPage() {
   // Image upload state
   const [uploadingImage, setUploadingImage] = useState(false);
   const [newBrandName, setNewBrandName] = useState('');
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   async function fetchWatches() {
     setLoading(true);
@@ -72,6 +73,7 @@ export default function AdminWatchesPage() {
   const handleOpenCreate = () => {
     setEditingWatch(null);
     setNewBrandName('');
+    setNewCategoryName('');
     setFormData({
       name: '',
       brand: '',
@@ -94,6 +96,7 @@ export default function AdminWatchesPage() {
   const handleOpenEdit = (watch: Watch) => {
     setEditingWatch(watch);
     setNewBrandName('');
+    setNewCategoryName('');
     setFormData({
       name: watch.name,
       brand: watch.brand,
@@ -182,15 +185,22 @@ export default function AdminWatchesPage() {
     setSuccess(null);
 
     const finalBrand = formData.brand === 'NEW_BRAND' ? newBrandName.trim() : formData.brand;
+    const finalCategory = formData.category === 'NEW_CATEGORY' ? newCategoryName.trim() : formData.category;
 
     if (!finalBrand) {
       setError('Please select or specify a brand.');
       return;
     }
 
+    if (!finalCategory) {
+      setError('Please select or specify a category.');
+      return;
+    }
+
     const payload = {
       ...formData,
       brand: finalBrand,
+      category: finalCategory,
       parent_id: formData.parent_id === '' ? null : formData.parent_id
     };
 
@@ -462,11 +472,36 @@ export default function AdminWatchesPage() {
                     className="w-full bg-white border border-zinc-200 text-zinc-900 focus:border-primary/50 rounded px-3 py-2 outline-none"
                   >
                     <option value="">Select Category</option>
-                    <option value="Diver">Diver</option>
-                    <option value="Chronograph">Chronograph</option>
-                    <option value="Dress">Dress</option>
-                    <option value="Pilot">Pilot</option>
+                    {Array.from(new Set([
+                      "Men's Watches",
+                      "Women's Watches",
+                      "Male Watches",
+                      "Female Watches",
+                      "Premium Watches",
+                      "Shoes",
+                      "Premium Shoes",
+                      "Smart Watches",
+                      "Diver",
+                      "Chronograph",
+                      "Dress",
+                      "Pilot",
+                      ...(editingWatch ? [editingWatch.category] : []),
+                      ...watches.map(w => w.category)
+                    ].filter(Boolean))).map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                    <option value="NEW_CATEGORY">+ Add New Category...</option>
                   </select>
+                  {formData.category === 'NEW_CATEGORY' && (
+                    <input 
+                      type="text" 
+                      placeholder="Type new category name (e.g. Men's Watches, Shoes)..."
+                      required
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      className="w-full mt-1.5 bg-white border border-zinc-200 text-zinc-900 focus:border-primary/50 rounded px-3 py-2 outline-none"
+                    />
+                  )}
                 </div>
               </div>
 

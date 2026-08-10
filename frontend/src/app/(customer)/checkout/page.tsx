@@ -105,6 +105,18 @@ export default function CheckoutPage() {
 
   // If order was created successfully, show confirmation screen
   if (createdOrder) {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://stylish-tick.vercel.app';
+    const orderItemsSummary = createdOrder.items && createdOrder.items.length > 0
+      ? createdOrder.items.map((i: any) => {
+          const name = i.product?.name || i.watch?.name || 'Item';
+          const id = i.product_id || i.product?.id || i.watch?.id;
+          return `• Product: ${name}\n  Link: ${origin}/watches/${id}`;
+        }).join('\n\n')
+      : '';
+
+    const waText = `Hi StylishTick Boutique, I have placed order #${createdOrder.order_number} worth ₹${createdOrder.total_amount.toLocaleString()}.${orderItemsSummary ? `\n\nOrder Details:\n${orderItemsSummary}` : ''}\n\nPlease verify my details and share the UPI payment instructions.`;
+    const waUrl = `https://wa.me/919699986430?text=${encodeURIComponent(waText)}`;
+
     return (
       <div className="container mx-auto px-4 py-16 max-w-xl text-center space-y-6">
         <div className="space-y-4">
@@ -124,7 +136,7 @@ export default function CheckoutPage() {
           </div>
           <div className="flex justify-between py-1">
             <span className="text-muted-foreground">Payment Method</span>
-            <span className="font-semibold text-foreground">{createdOrder.payment_method === 'UPI via WhatsApp' ? 'UPI Transfer' : 'Cash on Delivery (COD)'}</span>
+            <span className="font-semibold text-foreground">UPI Transfer & WhatsApp Verification</span>
           </div>
           <div className="flex justify-between py-1">
             <span className="text-muted-foreground">Payment Status</span>
@@ -140,25 +152,14 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {createdOrder.payment_method === 'UPI via WhatsApp' ? (
-          <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 rounded-lg text-xs space-y-2 text-left">
-            <p className="font-bold uppercase tracking-wider text-[10px] text-emerald-600 dark:text-emerald-400">Payment Verification Required</p>
-            <p className="leading-relaxed">To activate order processing, click the green button below to connect with our WhatsApp boutique concierge, submit your UPI screenshot, and confirm shipping.</p>
-          </div>
-        ) : (
-          <div className="p-4 bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 rounded-lg text-xs space-y-2 text-left">
-            <p className="font-bold uppercase tracking-wider text-[10px] text-amber-600 dark:text-amber-400">COD Verification Required</p>
-            <p className="leading-relaxed">Your cash-on-delivery order is reserved. Please click the button below to verify your address details on WhatsApp to expedite dispatch.</p>
-          </div>
-        )}
+        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 rounded-lg text-xs space-y-2 text-left">
+          <p className="font-bold uppercase tracking-wider text-[10px] text-emerald-600 dark:text-emerald-400">Payment Verification Required</p>
+          <p className="leading-relaxed">To activate order processing, click the green button below to connect with our WhatsApp boutique concierge, submit your UPI screenshot, and confirm shipping.</p>
+        </div>
 
         <div className="flex flex-col gap-3 justify-center w-full max-w-sm mx-auto pt-2">
           <a 
-            href={
-              createdOrder.payment_method === 'UPI via WhatsApp'
-                ? `https://wa.me/919876543210?text=Hi%20StylishTick%20Boutique%2C%20I%20have%20placed%20order%20%23${createdOrder.order_number}%20worth%20%E2%82%B9${createdOrder.total_amount}.%20Please%20verify%20my%20details%20and%20share%20the%20UPI%20payment%20instructions.`
-                : `https://wa.me/919876543210?text=Hi%20StylishTick%20Boutique%2C%20I%20want%20to%20verify%20my%20COD%20order%20%23${createdOrder.order_number}.`
-            }
+            href={waUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full text-center px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs uppercase tracking-wider font-semibold rounded transition-colors shadow-lg flex items-center justify-center gap-2"
@@ -300,16 +301,15 @@ export default function CheckoutPage() {
             </h2>
             
             <div className="space-y-3">
-              {/* Option 1: WhatsApp UPI */}
+              {/* UPI Transfer & WhatsApp Verification */}
               <div 
-                className={`p-4 border rounded flex items-start gap-3 text-xs cursor-pointer transition-all ${paymentMethod === 'UPI via WhatsApp' ? 'border-primary bg-primary/5' : 'border-border bg-muted/40 hover:bg-muted/70'}`}
-                onClick={() => setPaymentMethod('UPI via WhatsApp')}
+                className="p-4 border border-primary bg-primary/5 rounded flex items-start gap-3 text-xs"
               >
                 <input 
                   type="radio" 
                   name="paymentMethodSelect"
-                  checked={paymentMethod === 'UPI via WhatsApp'}
-                  onChange={() => setPaymentMethod('UPI via WhatsApp')}
+                  checked={true}
+                  readOnly
                   className="accent-primary mt-0.5 flex-shrink-0" 
                 />
                 <div className="space-y-0.5">
@@ -319,26 +319,6 @@ export default function CheckoutPage() {
                   </div>
                   <p className="text-[11px] text-muted-foreground">
                     Complete payment using GPay, PhonePe or Paytm. Send payment receipt on WhatsApp for priority processing.
-                  </p>
-                </div>
-              </div>
-
-              {/* Option 2: Cash on Delivery */}
-              <div 
-                className={`p-4 border rounded flex items-start gap-3 text-xs cursor-pointer transition-all ${paymentMethod === 'Cash on Delivery' ? 'border-primary bg-primary/5' : 'border-border bg-muted/40 hover:bg-muted/70'}`}
-                onClick={() => setPaymentMethod('Cash on Delivery')}
-              >
-                <input 
-                  type="radio" 
-                  name="paymentMethodSelect"
-                  checked={paymentMethod === 'Cash on Delivery'}
-                  onChange={() => setPaymentMethod('Cash on Delivery')}
-                  className="accent-primary mt-0.5 flex-shrink-0" 
-                />
-                <div className="space-y-0.5">
-                  <div className="font-semibold text-foreground">Cash on Delivery (COD)</div>
-                  <p className="text-[11px] text-muted-foreground">
-                    Pay with cash at the time of delivery. Requires brief verification call/message before dispatch.
                   </p>
                 </div>
               </div>
