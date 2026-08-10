@@ -192,7 +192,7 @@ export default function Footer() {
           <div className="flex items-center justify-center lg:justify-end gap-3.5 w-full lg:w-1/4">
             {/* Instagram Icon */}
             <a 
-              href="https://instagram.com" 
+              href="https://www.instagram.com/the_stylish_tick?igsh=dXJ6MTE4ODBscWYx" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="p-2 bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] text-white rounded-full transition-all duration-300 hover:scale-110 hover:shadow-[0_0_12px_rgba(238,42,123,0.4)] flex items-center justify-center"
