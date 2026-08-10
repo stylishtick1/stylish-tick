@@ -242,6 +242,20 @@ export default function AdminWatchesPage() {
     w.category.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleClearAllProducts = async () => {
+    if (!window.confirm("Are you sure you want to clear all products from inventory? This action will remove all current products.")) return;
+    try {
+      setLoading(true);
+      await api.delete('/admin/watches-purge/all');
+      setWatches([]);
+      setSuccess('All products have been cleared successfully.');
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to clear products');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6 text-zinc-950">
       
@@ -252,12 +266,22 @@ export default function AdminWatchesPage() {
           <p className="text-xs text-zinc-500 uppercase tracking-widest pt-1">Manage brand timepieces & descriptions</p>
         </div>
         
-        <button
-          onClick={handleOpenCreate}
-          className="px-5 py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground font-semibold rounded text-xs uppercase tracking-wider transition-colors flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" /> Add Timepiece
-        </button>
+        <div className="flex items-center gap-3">
+          {watches.length > 0 && (
+            <button
+              onClick={handleClearAllProducts}
+              className="px-4 py-2.5 bg-red-600/10 hover:bg-red-600 text-red-600 hover:text-white border border-red-600/30 font-semibold rounded text-xs uppercase tracking-wider transition-colors"
+            >
+              Clear All Products
+            </button>
+          )}
+          <button
+            onClick={handleOpenCreate}
+            className="px-5 py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground font-semibold rounded text-xs uppercase tracking-wider transition-colors flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" /> Add Timepiece
+          </button>
+        </div>
       </div>
 
       {success && (
@@ -397,7 +421,7 @@ export default function AdminWatchesPage() {
                   >
                     <option value="">Select Brand</option>
                     {Array.from(new Set([
-                      'Rolex', 'Omega', 'Seiko', 'Titan', 'Tommy Hilfiger', 'Hublot', 'Fossil', 'Smart Watches',
+                      'Rolex', 'Omega', 'Seiko', 'Titan', 'Tommy Hilfiger', 'Hublot', 'Fossil',
                       ...(editingWatch ? [editingWatch.brand] : []),
                       ...watches.map(w => w.brand)
                     ].filter(Boolean))).map(b => (
@@ -473,18 +497,10 @@ export default function AdminWatchesPage() {
                   >
                     <option value="">Select Category</option>
                     {Array.from(new Set([
-                      "Men's Watches",
-                      "Women's Watches",
                       "Male Watches",
                       "Female Watches",
                       "Premium Watches",
                       "Shoes",
-                      "Premium Shoes",
-                      "Smart Watches",
-                      "Diver",
-                      "Chronograph",
-                      "Dress",
-                      "Pilot",
                       ...(editingWatch ? [editingWatch.category] : []),
                       ...watches.map(w => w.category)
                     ].filter(Boolean))).map(c => (

@@ -221,6 +221,21 @@ class OrderResponse(BaseModel):
     created_at: datetime
     items: List[OrderItemResponse] = []
 
+    @computed_field
+    @property
+    def user_name(self) -> str:
+        return self.user.full_name if hasattr(self, 'user') and self.user else "Guest Customer"
+
+    @computed_field
+    @property
+    def user_email(self) -> str:
+        return self.user.email if hasattr(self, 'user') and self.user else "N/A"
+
+    @computed_field
+    @property
+    def user_phone(self) -> Optional[str]:
+        return self.user.phone if hasattr(self, 'user') and self.user else None
+
     class Config:
         from_attributes = True
 

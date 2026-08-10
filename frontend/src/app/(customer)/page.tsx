@@ -202,47 +202,39 @@ export default function HomePage() {
           <p className="text-xs text-muted-foreground uppercase tracking-widest pt-2">Shop by Category</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[
             {
-              title: "Gentlemen’s Horology",
-              tagline: "Timeless precision for men.",
+              title: "Male Watches",
+              tagline: "Timeless precision and masculine elegance.",
               link: "/shop?category=Male Watches",
               image: "https://res.cloudinary.com/hdt2geyf/image/upload/v1786343633/masterpeice_wos6pb.jpg",
-              span: "md:col-span-3",
-              height: "h-[380px]"
+              span: "md:col-span-1",
+              height: "h-[360px]"
             },
             {
-              title: "Ladies' Elegance",
-              tagline: "Grace and sophistication.",
+              title: "Female Watches",
+              tagline: "Grace, sophistication, and subtle luxury.",
               link: "/shop?category=Female Watches",
               image: "https://res.cloudinary.com/hdt2geyf/image/upload/v1786342465/girls_watch_ecmc3f.jpg",
-              span: "md:col-span-3",
-              height: "h-[380px]"
+              span: "md:col-span-1",
+              height: "h-[360px]"
             },
             {
-              title: "Haute Horlogerie",
+              title: "Premium Watches",
               tagline: "Masterpiece complications for collectors.",
               link: "/shop?category=Premium Watches",
               image: "https://res.cloudinary.com/hdt2geyf/image/upload/v1786343634/gentlemans_r6wsnn.jpg",
-              span: "md:col-span-2",
-              height: "h-[320px]"
+              span: "md:col-span-1",
+              height: "h-[360px]"
             },
             {
-              title: "Bespoke Cordwainers",
-              tagline: "Crafted steps of distinction.",
-              link: "/shop?category=Premium Shoes",
-              image: "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?q=80&w=600",
-              span: "md:col-span-2",
-              height: "h-[320px]"
-            },
-            {
-              title: "Contemporary Elite",
-              tagline: "Modern luxury in motion.",
+              title: "Shoes",
+              tagline: "Bespoke leather steps of distinction.",
               link: "/shop?category=Shoes",
               image: "https://res.cloudinary.com/hdt2geyf/image/upload/v1786342465/shoes_image_uqug05.jpg",
-              span: "md:col-span-2",
-              height: "h-[320px]"
+              span: "md:col-span-1",
+              height: "h-[360px]"
             }
           ].map((c) => (
             <Link

@@ -139,6 +139,15 @@ def delete_product(
     db.commit()
     return {"message": f"Product '{product.name}' has been soft-deleted successfully."}
 
+@router.delete("/watches-purge/all")
+def clear_all_products(
+    admin: str = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    db.query(Product).update({Product.is_deleted: True})
+    db.commit()
+    return {"message": "All products have been cleared from store inventory successfully."}
+
 # --- PRODUCT IMAGE CRUD & REORDER ---
 @router.post("/watches/{product_id}/images", response_model=ProductImageResponse)
 def add_product_image(
