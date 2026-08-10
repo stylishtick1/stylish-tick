@@ -4,7 +4,7 @@ import withBundleAnalyzer from "@next/bundle-analyzer";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  allowedDevOrigins: ['bars-engineer-founder-formats.trycloudflare.com', '192.168.1.16:3000', '192.168.1.16'],
+  allowedDevOrigins: ['bars-engineer-founder-formats.trycloudflare.com', '192.168.1.16:3000', '192.168.1.16:3001', '192.168.1.16'],
   images: {
     remotePatterns: [
       {

@@ -23,7 +23,6 @@ function ShopContent() {
 
   // Search Param Initializer
   const initialSearch = searchParams.get('search') || '';
-  const initialBrand = searchParams.get('brand') || '';
   const initialCategory = searchParams.get('category') || '';
   const initialFeatured = searchParams.get('featured') || '';
   const initialMinPrice = searchParams.get('min_price') || '';
@@ -31,7 +30,6 @@ function ShopContent() {
 
   // Filter States
   const [search, setSearch] = useState(initialSearch);
-  const [selectedBrand, setSelectedBrand] = useState(initialBrand);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [minPrice, setMinPrice] = useState<number | ''>(initialMinPrice === '' ? '' : Number(initialMinPrice));
   const [maxPrice, setMaxPrice] = useState<number | ''>(initialMaxPrice === '' ? '' : Number(initialMaxPrice));
@@ -42,7 +40,6 @@ function ShopContent() {
   const limit = 12;
 
   // Metadata Options fetched from API
-  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [watches, setWatches] = useState<Watch[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,15 +64,11 @@ function ShopContent() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fetch filter options (Brands & Categories)
+  // Fetch filter options (Categories)
   useEffect(() => {
     async function fetchFilterOptions() {
       try {
-        const [brandsRes, catsRes] = await Promise.all([
-          api.get('/watches/brands'),
-          api.get('/watches/categories')
-        ]);
-        setAvailableBrands(brandsRes.data);
+        const catsRes = await api.get('/watches/categories');
         setAvailableCategories(catsRes.data);
       } catch (err) {
         console.error('Failed to load filter metadata:', err);
@@ -93,7 +86,6 @@ function ShopContent() {
         let url = `/watches?limit=${limit}&offset=${offset}`;
         
         if (search) url += `&search=${encodeURIComponent(search)}`;
-        if (selectedBrand) url += `&brand=${encodeURIComponent(selectedBrand)}`;
         if (selectedCategory) url += `&category=${encodeURIComponent(selectedCategory)}`;
         if (minPrice !== '') url += `&min_price=${minPrice}`;
         if (maxPrice !== '') url += `&max_price=${maxPrice}`;
@@ -109,12 +101,11 @@ function ShopContent() {
       }
     }
     fetchWatches();
-  }, [search, selectedBrand, selectedCategory, minPrice, maxPrice, sortBy, page, initialFeatured]);
+  }, [search, selectedCategory, minPrice, maxPrice, sortBy, page, initialFeatured]);
 
   // Sync state with search params if they change externally
   useEffect(() => {
     setSearch(searchParams.get('search') || '');
-    setSelectedBrand(searchParams.get('brand') || '');
     setSelectedCategory(searchParams.get('category') || '');
     const minP = searchParams.get('min_price') || '';
     const maxP = searchParams.get('max_price') || '';
@@ -124,7 +115,6 @@ function ShopContent() {
 
   const handleResetFilters = () => {
     setSearch('');
-    setSelectedBrand('');
     setSelectedCategory('');
     setMinPrice('');
     setMaxPrice('');
@@ -133,17 +123,7 @@ function ShopContent() {
     router.push('/shop');
   };
 
-  const getSelectedBrandsList = () => selectedBrand ? selectedBrand.split(',') : [];
   const getSelectedCategoriesList = () => selectedCategory ? selectedCategory.split(',') : [];
-
-  const handleBrandToggle = (brandName: string) => {
-    const list = getSelectedBrandsList();
-    const newList = list.includes(brandName)
-      ? list.filter((b) => b !== brandName)
-      : [...list, brandName];
-    setSelectedBrand(newList.join(','));
-    setPage(1);
-  };
 
   const handleCategoryToggle = (catName: string) => {
     const list = getSelectedCategoriesList();
@@ -199,40 +179,6 @@ function ShopContent() {
             </div>
           </div>
 
-          {/* Brands list */}
-          <div className="space-y-2">
-            <h4 className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Brand</h4>
-            <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-              <button
-                onClick={() => { setSelectedBrand(''); setPage(1); }}
-                className={`w-full text-left text-xs py-1 px-2 rounded flex items-center justify-between transition-colors ${!selectedBrand ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted text-muted-foreground'}`}
-              >
-                All Brands
-                {!selectedBrand && <Check className="w-3.5 h-3.5" />}
-              </button>
-              {availableBrands.map((b) => {
-                const list = getSelectedBrandsList();
-                const isChecked = list.includes(b);
-                return (
-                  <button
-                    key={b}
-                    onClick={() => handleBrandToggle(b)}
-                    className={`w-full text-left text-xs py-1 px-2 rounded flex items-center justify-between transition-colors ${isChecked ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted text-muted-foreground'}`}
-                  >
-                    <span className="flex items-center gap-2">
-                      <input 
-                        type="checkbox" 
-                        checked={isChecked}
-                        readOnly
-                        className="accent-primary rounded w-3 h-3 cursor-pointer"
-                      />
-                      {b}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
 
           {/* Categories list */}
           <div className="space-y-2">
@@ -572,40 +518,6 @@ function ShopContent() {
                   </div>
                 </div>
 
-                {/* Mobile Brands */}
-                <div className="space-y-2">
-                  <h4 className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Brand</h4>
-                  <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
-                    <button
-                      onClick={() => { setSelectedBrand(''); setPage(1); }}
-                      className={`w-full text-left text-xs py-1.5 px-2 rounded flex items-center justify-between transition-colors ${!selectedBrand ? 'bg-primary/10 text-primary font-semibold' : 'text-muted-foreground hover:bg-muted'}`}
-                    >
-                      <span>All Brands</span>
-                      {!selectedBrand && <Check className="w-3.5 h-3.5" />}
-                    </button>
-                    {availableBrands.map((b) => {
-                      const list = getSelectedBrandsList();
-                      const isChecked = list.includes(b);
-                      return (
-                        <button
-                          key={b}
-                          onClick={() => handleBrandToggle(b)}
-                          className={`w-full text-left text-xs py-1.5 px-2 rounded flex items-center justify-between transition-colors ${isChecked ? 'bg-primary/10 text-primary font-semibold' : 'text-muted-foreground hover:bg-muted'}`}
-                        >
-                          <span className="flex items-center gap-2">
-                            <input 
-                              type="checkbox" 
-                              checked={isChecked}
-                              readOnly
-                              className="accent-primary rounded w-3 h-3 cursor-pointer"
-                            />
-                            {b}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
 
                 {/* Mobile Categories */}
                 <div className="space-y-2">
