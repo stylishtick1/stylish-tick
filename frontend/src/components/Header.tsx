@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-import { ShoppingCart, User as UserIcon, Menu, X, Sun, Moon, LogOut, Heart, LayoutDashboard, Search } from 'lucide-react';
+import { ShoppingCart, User as UserIcon, Menu, X, LogOut, Heart, LayoutDashboard, Search } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
 import CartDrawer from './CartDrawer';
@@ -293,30 +293,6 @@ export default function Header() {
               </div>
             )}
 
-            {/* Theme Toggle */}
-            <button 
-              onClick={toggleTheme}
-              className="p-2.5 text-muted-foreground hover:text-primary rounded-full hover:bg-muted/50 transition-all duration-300 group"
-              aria-label="Toggle Theme"
-            >
-              {isThemeDark ? (
-                <Sun className="w-4.5 h-4.5 transition-transform duration-500 group-hover:rotate-45" />
-              ) : (
-                <Moon className="w-4.5 h-4.5 transition-transform duration-500 group-hover:-rotate-12" />
-              )}
-            </button>
-
-            {/* Wishlist Link (Users only) */}
-            {token && !isAdmin && (
-              <Link 
-                href="/wishlist" 
-                className="p-2.5 text-muted-foreground hover:text-primary rounded-full hover:bg-muted/50 transition-all duration-300 hidden sm:inline-block hover:scale-105"
-                title="Wishlist"
-              >
-                <Heart className="w-4.5 h-4.5" />
-              </Link>
-            )}
-
             {/* Shopping Cart Icon (Users only or guest) */}
             {!isAdmin && (
               <button 
@@ -333,81 +309,64 @@ export default function Header() {
               </button>
             )}
 
-            {/* Profile Dropdown */}
-            <div className="relative">
-              {token ? (
-                <>
-                  <button 
-                    onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                    className={`p-2.5 flex items-center gap-1 text-muted-foreground hover:text-primary rounded-full hover:bg-muted/50 transition-all duration-300 focus:outline-none ${isProfileDropdownOpen ? 'text-primary bg-muted/30' : ''}`}
-                  >
-                    <UserIcon className="w-4.5 h-4.5" />
-                  </button>
-                  
-                  {isProfileDropdownOpen && (
-                    <div className="absolute right-0 mt-3 w-56 bg-card border border-border rounded-lg shadow-xl py-2 z-50 text-xs text-foreground animate-fade-in">
-                      <div className="px-4 py-2.5 border-b border-border/50 text-[10px] text-muted-foreground">
-                        Signed in as <br />
-                        <span className="font-semibold text-foreground break-all">{user?.email || 'Admin'}</span>
-                      </div>
-                      
-                      {isAdmin ? (
+            {/* Profile Dropdown (Shown only when logged in, e.g. for Admin) */}
+            {token && (
+              <div className="relative">
+                <button 
+                  onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                  className={`p-2.5 flex items-center gap-1 text-muted-foreground hover:text-primary rounded-full hover:bg-muted/50 transition-all duration-300 focus:outline-none ${isProfileDropdownOpen ? 'text-primary bg-muted/30' : ''}`}
+                >
+                  <UserIcon className="w-4.5 h-4.5" />
+                </button>
+                
+                {isProfileDropdownOpen && (
+                  <div className="absolute right-0 mt-3 w-56 bg-card border border-border rounded-lg shadow-xl py-2 z-50 text-xs text-foreground animate-fade-in">
+                    <div className="px-4 py-2.5 border-b border-border/50 text-[10px] text-muted-foreground">
+                      Signed in as <br />
+                      <span className="font-semibold text-foreground break-all">{user?.email || 'Admin'}</span>
+                    </div>
+                    
+                    {isAdmin ? (
+                      <Link 
+                        href="/admin" 
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                        className="flex items-center gap-2 px-4 py-3 hover:bg-muted text-foreground transition-colors font-medium"
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-primary" />
+                        Admin Panel
+                      </Link>
+                    ) : (
+                      <>
                         <Link 
-                          href="/admin" 
+                          href="/profile" 
                           onClick={() => setIsProfileDropdownOpen(false)}
                           className="flex items-center gap-2 px-4 py-3 hover:bg-muted text-foreground transition-colors font-medium"
                         >
-                          <LayoutDashboard className="w-4 h-4 text-primary" />
-                          Admin Panel
+                          <UserIcon className="w-4 h-4 text-primary" />
+                          My Profile
                         </Link>
-                      ) : (
-                        <>
-                          <Link 
-                            href="/profile" 
-                            onClick={() => setIsProfileDropdownOpen(false)}
-                            className="flex items-center gap-2 px-4 py-3 hover:bg-muted text-foreground transition-colors font-medium"
-                          >
-                            <UserIcon className="w-4 h-4 text-primary" />
-                            My Profile
-                          </Link>
-                          <Link 
-                            href="/wishlist" 
-                            onClick={() => setIsProfileDropdownOpen(false)}
-                            className="flex items-center gap-2 px-4 py-3 hover:bg-muted text-foreground transition-colors font-medium sm:hidden"
-                          >
-                            <Heart className="w-4 h-4 text-primary" />
-                            My Wishlist
-                          </Link>
-                        </>
-                      )}
-                      
-                      <button 
-                        onClick={handleLogoutClick}
-                        className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-muted text-destructive hover:text-destructive transition-colors border-t border-border/50 mt-1 font-medium"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        Log out
-                      </button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="hidden md:flex items-center md:space-x-1 lg:space-x-2 pl-1">
-                  <Link 
-                    href="/login" 
-                    className="md:px-2.5 md:py-1.5 lg:px-4 lg:py-2 md:text-[10px] lg:text-xs font-semibold uppercase md:tracking-wider lg:tracking-widest hover:text-primary transition-colors duration-300 whitespace-nowrap"
-                  >
-                    Log In
-                  </Link>
-                  <Link 
-                    href="/register" 
-                    className="md:px-3 md:py-1.5 lg:px-4 lg:py-2 bg-primary hover:bg-primary-hover text-primary-foreground md:text-[10px] lg:text-xs font-semibold uppercase md:tracking-wider lg:tracking-widest rounded transition-colors duration-300 shadow-sm whitespace-nowrap"
-                  >
-                    Register
-                  </Link>
-                </div>
-              )}
-            </div>            {/* Mobile Menu Toggle */}
+                        <Link 
+                          href="/wishlist" 
+                          onClick={() => setIsProfileDropdownOpen(false)}
+                          className="flex items-center gap-2 px-4 py-3 hover:bg-muted text-foreground transition-colors font-medium sm:hidden"
+                        >
+                          <Heart className="w-4 h-4 text-primary" />
+                          My Wishlist
+                        </Link>
+                      </>
+                    )}
+                    
+                    <button 
+                      onClick={handleLogoutClick}
+                      className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-muted text-destructive hover:text-destructive transition-colors border-t border-border/50 mt-1 font-medium"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Log out
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}            {/* Mobile Menu Toggle */}
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="p-2.5 md:hidden text-muted-foreground hover:text-primary rounded-full hover:bg-muted/50 transition-all duration-300"
@@ -486,24 +445,7 @@ export default function Header() {
                     </button>
                   </div>
                 </div>
-              ) : (
-                <div className="flex flex-col space-y-2">
-                  <Link 
-                    href="/login" 
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="w-full py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground text-center text-[10px] font-bold uppercase tracking-wider rounded transition-all duration-300 shadow-sm"
-                  >
-                    Sign In
-                  </Link>
-                  <Link 
-                    href="/register" 
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="w-full py-2.5 border border-border hover:bg-muted/10 text-foreground text-center text-[10px] font-bold uppercase tracking-wider rounded transition-all duration-300"
-                  >
-                    Register
-                  </Link>
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
         )}

@@ -160,7 +160,7 @@ def get_product_details(product_id: str, db: Session = Depends(get_db)):
     # Map reviews to includes user names
     review_responses = []
     for r in reviews:
-        user_name = r.user.full_name if r.user else "Anonymous"
+        user_name = r.user.full_name if r.user else getattr(r, 'reviewer_name', None) or "Verified Customer"
         review_responses.append(
             ReviewResponse(
                 id=r.id,
