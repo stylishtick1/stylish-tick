@@ -17,37 +17,37 @@ export default function CheckoutPage() {
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
+    email: '',
     address: '',
     city: '',
     state: '',
-    country: '',
+    country: 'India',
     postalCode: ''
   });
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'Cash on Delivery' | 'UPI via WhatsApp'>('UPI via WhatsApp');
+  const [paymentMethod, setPaymentMethod] = useState<'Cash on Delivery' | 'UPI via WhatsApp'>('Cash on Delivery');
   
   // Checkout Success State
   const [createdOrder, setCreatedOrder] = useState<any | null>(null);
 
-  // Force login
+  // Auto-fill logged in user details if available
   useEffect(() => {
-    if (isInitialized && (!token || !user)) {
-      router.push('/login?redirect=/checkout');
-    } else if (isInitialized && user) {
+    if (isInitialized && user) {
       setFormData((prev) => ({
         ...prev,
-        fullName: user.full_name || '',
-        phone: user.phone || ''
+        fullName: prev.fullName || user.full_name || '',
+        phone: prev.phone || user.phone || '',
+        email: prev.email || user.email || ''
       }));
     }
-  }, [isInitialized, token, user, router]);
+  }, [isInitialized, user]);
 
-  if (!isInitialized || !user) {
+  if (!isInitialized) {
     return (
       <div className="container mx-auto px-4 py-20 text-center animate-pulse">
-        <p className="text-muted-foreground text-xs uppercase tracking-widest">Verifying boutique session...</p>
+        <p className="text-muted-foreground text-xs uppercase tracking-widest">Loading checkout...</p>
       </div>
     );
   }
@@ -75,27 +75,44 @@ export default function CheckoutPage() {
     setError(null);
 
     // Basic validation
-    if (!formData.address || !formData.city || !formData.state || !formData.country || !formData.postalCode) {
-      setError('Please fill in all shipping fields.');
+    if (!formData.fullName.trim()) {
+      setError('Please provide your full name.');
+      return;
+    }
+
+    if (!formData.phone.trim() || formData.phone.trim().length < 10) {
+      setError('Please provide a valid 10-digit mobile number.');
+      return;
+    }
+
+    if (!formData.address || !formData.city || !formData.state || !formData.postalCode) {
+      setError('Please fill in all delivery address fields.');
       return;
     }
 
     setLoading(true);
     try {
       const orderPayload = {
-        shipping_address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        country: formData.country,
-        postal_code: formData.postalCode,
-        payment_method: paymentMethod
+        full_name: formData.fullName.trim(),
+        phone: formData.phone.trim(),
+        email: formData.email.trim() || undefined,
+        shipping_address: formData.address.trim(),
+        city: formData.city.trim(),
+        state: formData.state.trim(),
+        country: formData.country.trim() || 'India',
+        postal_code: formData.postalCode.trim(),
+        payment_method: paymentMethod,
+        items: items.map(item => ({
+          product_id: item.watch_id || item.watch.id,
+          quantity: item.quantity
+        }))
       };
       
       const response = await api.post('/orders', orderPayload);
       setCreatedOrder(response.data);
       
       // Clear store cart
-      await clearCart(true);
+      await clearCart(!!user);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'An error occurred during checkout.');
     } finally {
@@ -125,10 +142,18 @@ export default function CheckoutPage() {
           <p className="text-xs text-muted-foreground uppercase tracking-widest">Your timepiece has been successfully reserved</p>
         </div>
 
-        <div className="bg-card border border-border p-4 sm:p-6 rounded-lg text-xs text-left space-y-4 shadow">
+        <div className="bg-card border border-border p-4 sm:p-6 rounded-lg text-xs text-left space-y-3 shadow">
           <div className="flex justify-between pb-3 border-b border-border/50 font-semibold text-sm">
             <span>Order Reference</span>
             <span className="text-primary font-mono">{createdOrder.order_number}</span>
+          </div>
+          <div className="flex justify-between py-1">
+            <span className="text-muted-foreground">Customer Name</span>
+            <span className="font-semibold text-foreground">{createdOrder.user_name}</span>
+          </div>
+          <div className="flex justify-between py-1">
+            <span className="text-muted-foreground">Mobile Number</span>
+            <span className="font-semibold text-foreground">{createdOrder.user_phone || 'N/A'}</span>
           </div>
           <div className="flex justify-between py-1">
             <span className="text-muted-foreground">Total Amount</span>
@@ -136,26 +161,33 @@ export default function CheckoutPage() {
           </div>
           <div className="flex justify-between py-1">
             <span className="text-muted-foreground">Payment Method</span>
-            <span className="font-semibold text-foreground">UPI Transfer & WhatsApp Verification</span>
+            <span className="font-semibold text-foreground">{createdOrder.payment_method}</span>
           </div>
           <div className="flex justify-between py-1">
             <span className="text-muted-foreground">Payment Status</span>
-            <span className={`font-semibold ${createdOrder.payment_status === 'Awaiting Verification' ? 'text-amber-600 dark:text-amber-400 animate-pulse' : 'text-foreground'}`}>
+            <span className={`font-semibold ${createdOrder.payment_status === 'Awaiting Verification' ? 'text-amber-600 dark:text-amber-400 animate-pulse' : 'text-emerald-600 dark:text-emerald-400'}`}>
               {createdOrder.payment_status}
             </span>
           </div>
           <div className="flex justify-between py-1">
             <span className="text-muted-foreground">Delivery Address</span>
             <span className="font-semibold text-foreground max-w-[200px] text-right truncate">
-              {createdOrder.shipping_address}, {createdOrder.city}
+              {createdOrder.shipping_address}, {createdOrder.city} - {createdOrder.postal_code}
             </span>
           </div>
         </div>
 
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 rounded-lg text-xs space-y-2 text-left">
-          <p className="font-bold uppercase tracking-wider text-[10px] text-emerald-600 dark:text-emerald-400">Payment Verification Required</p>
-          <p className="leading-relaxed">To activate order processing, click the green button below to connect with our WhatsApp boutique concierge, submit your UPI screenshot, and confirm shipping.</p>
-        </div>
+        {createdOrder.payment_method === 'UPI via WhatsApp' ? (
+          <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 rounded-lg text-xs space-y-2 text-left">
+            <p className="font-bold uppercase tracking-wider text-[10px] text-emerald-600 dark:text-emerald-400">Payment Verification Required</p>
+            <p className="leading-relaxed">To activate order processing, click the button below to connect with our WhatsApp concierge, submit your UPI screenshot, and confirm shipping.</p>
+          </div>
+        ) : (
+          <div className="p-4 bg-primary/10 border border-primary/20 text-foreground rounded-lg text-xs space-y-2 text-left">
+            <p className="font-bold uppercase tracking-wider text-[10px] text-primary">Cash on Delivery Confirmed</p>
+            <p className="leading-relaxed">Your order is being prepared for dispatch. Our courier partner will collect ₹{createdOrder.total_amount.toLocaleString()} upon delivery to your doorstep.</p>
+          </div>
+        )}
 
         <div className="flex flex-col gap-3 justify-center w-full max-w-sm mx-auto pt-2">
           <a 
@@ -165,14 +197,14 @@ export default function CheckoutPage() {
             className="w-full text-center px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs uppercase tracking-wider font-semibold rounded transition-colors shadow-lg flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4 fill-current flex-shrink-0" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm5.835-4.26c1.656.982 3.284 1.503 4.887 1.504 5.548 0 10.063-4.505 10.066-10.054.001-2.688-1.042-5.216-2.935-7.11C15.918 2.185 13.393.976 10.708.975c-5.55 0-10.067 4.506-10.07 10.057-.001 1.957.513 3.867 1.489 5.558L1.13 21.05l4.762-1.31z"/></svg>
-            Verify on WhatsApp
+            Connect on WhatsApp
           </a>
           <div className="flex gap-2.5 w-full">
             <Link 
-              href="/profile"
+              href={`/track-order?ref=${createdOrder.order_number}`}
               className="flex-1 text-center px-4 py-2.5 border border-border hover:border-primary text-foreground text-[10px] uppercase tracking-wider font-semibold rounded transition-colors"
             >
-              My Orders
+              Track Order
             </Link>
             <Link 
               href="/shop"
@@ -211,22 +243,24 @@ export default function CheckoutPage() {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Recipient Name</label>
+              <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Recipient Name *</label>
               <input 
                 type="text" 
                 name="fullName"
                 required
+                placeholder="e.g. Rahul Sharma"
                 value={formData.fullName}
                 onChange={handleInputChange}
                 className="w-full text-xs bg-muted border border-border focus:border-primary/50 rounded px-3.5 py-2 outline-none"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Phone Number</label>
+              <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Phone Number (WhatsApp) *</label>
               <input 
                 type="text" 
                 name="phone"
                 required
+                placeholder="e.g. 9876543210"
                 value={formData.phone}
                 onChange={handleInputChange}
                 className="w-full text-xs bg-muted border border-border focus:border-primary/50 rounded px-3.5 py-2 outline-none"
@@ -235,12 +269,24 @@ export default function CheckoutPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Street Address</label>
+            <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Email Address (Optional)</label>
+            <input 
+              type="email" 
+              name="email"
+              placeholder="e.g. rahul@example.com"
+              value={formData.email}
+              onChange={handleInputChange}
+              className="w-full text-xs bg-muted border border-border focus:border-primary/50 rounded px-3.5 py-2 outline-none"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Street Address *</label>
             <input 
               type="text" 
               name="address"
               required
-              placeholder="e.g. 100 Main St, Apt 4"
+              placeholder="e.g. House No. 42, Green Park"
               value={formData.address}
               onChange={handleInputChange}
               className="w-full text-xs bg-muted border border-border focus:border-primary/50 rounded px-3.5 py-2 outline-none"
@@ -249,29 +295,31 @@ export default function CheckoutPage() {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="space-y-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">City</label>
+              <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">City *</label>
               <input 
                 type="text" 
                 name="city"
                 required
+                placeholder="e.g. Mumbai"
                 value={formData.city}
                 onChange={handleInputChange}
                 className="w-full text-xs bg-muted border border-border focus:border-primary/50 rounded px-3.5 py-2 outline-none"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">State</label>
+              <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">State *</label>
               <input 
                 type="text" 
                 name="state"
                 required
+                placeholder="e.g. Maharashtra"
                 value={formData.state}
                 onChange={handleInputChange}
                 className="w-full text-xs bg-muted border border-border focus:border-primary/50 rounded px-3.5 py-2 outline-none"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Country</label>
+              <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Country *</label>
               <input 
                 type="text" 
                 name="country"
@@ -282,11 +330,12 @@ export default function CheckoutPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Postal Code</label>
+              <label className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Pincode *</label>
               <input 
                 type="text" 
                 name="postalCode"
                 required
+                placeholder="e.g. 400001"
                 value={formData.postalCode}
                 onChange={handleInputChange}
                 className="w-full text-xs bg-muted border border-border focus:border-primary/50 rounded px-3.5 py-2 outline-none"
@@ -301,24 +350,55 @@ export default function CheckoutPage() {
             </h2>
             
             <div className="space-y-3">
-              {/* UPI Transfer & WhatsApp Verification */}
+              {/* Cash on Delivery */}
               <div 
-                className="p-4 border border-primary bg-primary/5 rounded flex items-start gap-3 text-xs"
+                onClick={() => setPaymentMethod('Cash on Delivery')}
+                className={`p-4 border rounded flex items-start gap-3 text-xs cursor-pointer transition-all ${
+                  paymentMethod === 'Cash on Delivery' 
+                    ? 'border-primary bg-primary/5 ring-1 ring-primary' 
+                    : 'border-border hover:border-primary/40'
+                }`}
               >
                 <input 
                   type="radio" 
                   name="paymentMethodSelect"
-                  checked={true}
-                  readOnly
+                  checked={paymentMethod === 'Cash on Delivery'}
+                  onChange={() => setPaymentMethod('Cash on Delivery')}
+                  className="accent-primary mt-0.5 flex-shrink-0" 
+                />
+                <div className="space-y-0.5">
+                  <div className="font-semibold text-foreground flex items-center gap-1.5">
+                    Cash on Delivery (COD)
+                    <span className="text-[8px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">Popular</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Pay with cash when your timepiece is delivered to your doorstep.
+                  </p>
+                </div>
+              </div>
+
+              {/* UPI Transfer & WhatsApp Verification */}
+              <div 
+                onClick={() => setPaymentMethod('UPI via WhatsApp')}
+                className={`p-4 border rounded flex items-start gap-3 text-xs cursor-pointer transition-all ${
+                  paymentMethod === 'UPI via WhatsApp' 
+                    ? 'border-primary bg-primary/5 ring-1 ring-primary' 
+                    : 'border-border hover:border-primary/40'
+                }`}
+              >
+                <input 
+                  type="radio" 
+                  name="paymentMethodSelect"
+                  checked={paymentMethod === 'UPI via WhatsApp'}
+                  onChange={() => setPaymentMethod('UPI via WhatsApp')}
                   className="accent-primary mt-0.5 flex-shrink-0" 
                 />
                 <div className="space-y-0.5">
                   <div className="font-semibold text-foreground flex items-center gap-1.5">
                     UPI Transfer & WhatsApp Verification
-                    <span className="text-[8px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">Recommended</span>
                   </div>
                   <p className="text-[11px] text-muted-foreground">
-                    Complete payment using GPay, PhonePe or Paytm. Send payment receipt on WhatsApp for priority processing.
+                    Pay using GPay, PhonePe or Paytm & confirm order on WhatsApp.
                   </p>
                 </div>
               </div>

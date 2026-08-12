@@ -106,7 +106,10 @@ class Order(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     order_number = Column(String, unique=True, index=True, nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    customer_name = Column(String, nullable=True)
+    customer_phone = Column(String, nullable=True)
+    customer_email = Column(String, nullable=True)
     total_amount = Column(Float, nullable=False)
     status = Column(String, default="Pending") # Pending, Confirmed, Shipped, Delivered, Cancelled
     shipping_address = Column(String, nullable=False)

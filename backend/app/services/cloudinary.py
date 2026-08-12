@@ -77,29 +77,55 @@ def delete_watch_image(image_url: str) -> bool:
     """
     Deletes an image. Handles both Cloudinary and local files.
     """
+    if not image_url:
+        return False
+
     if "cloudinary.com" in image_url:
+        if not cloudinary_configured:
+            print("Cloudinary is not configured. Cannot delete remote Cloudinary image.")
+            return False
         try:
             # Extract public_id from url
-            # Example: https://res.cloudinary.com/.../luxury_watches/file.jpg -> luxury_watches/file
-            parts = image_url.split("/")
-            version_idx = -1
-            for idx, part in enumerate(parts):
-                if part.startswith("v") and part[1:].isdigit():
-                    version_idx = idx
-                    break
+            # Example: https://res.cloudinary.com/cloud/image/upload/v1723456/luxury_watches/file.jpg -> luxury_watches/file
+            clean_url = image_url.split("?")[0]
+            parts = clean_url.split("/")
             
-            if version_idx != -1:
-                public_id_parts = parts[version_idx + 1:]
-            else:
-                # Fallback if no version string
-                public_id_parts = parts[-2:]
+            if "upload" in parts:
+                upload_idx = parts.index("upload")
+                sub_parts = parts[upload_idx + 1:]
                 
-            public_id = "/".join(public_id_parts).split(".")[0]
+                filtered_parts = []
+                for p in sub_parts:
+                    # Skip version strings (e.g. v1723456)
+                    if p.startswith("v") and p[1:].isdigit():
+                        continue
+                    # Skip transformation parameters (e.g. w_600, h_600, c_limit, q_auto:eco)
+                    if "," in p or "=" in p or p.startswith("c_") or p.startswith("w_") or p.startswith("q_") or p.startswith("f_"):
+                        continue
+                    filtered_parts.append(p)
+                
+                if filtered_parts:
+                    full_id_with_ext = "/".join(filtered_parts)
+                    public_id = os.path.splitext(full_id_with_ext)[0]
+                    
+                    logger_msg = f"Deleting Cloudinary resource with public_id: '{public_id}'"
+                    print(logger_msg)
+                    
+                    result = cloudinary.uploader.destroy(public_id)
+                    res_status = result.get("result")
+                    print(f"Cloudinary destroy response for '{public_id}': {res_status}")
+                    return res_status in ["ok", "not_found"]
+            
+            # Fallback if upload not in parts
+            filename = parts[-1].split(".")[0]
+            folder = parts[-2] if len(parts) >= 2 else ""
+            public_id = f"{folder}/{filename}" if folder and folder != "upload" else filename
             result = cloudinary.uploader.destroy(public_id)
-            return result.get("result") == "ok"
+            return result.get("result") in ["ok", "not_found"]
         except Exception as e:
-            print(f"Cloudinary delete failed: {e}")
+            print(f"Cloudinary delete failed for URL '{image_url}': {e}")
             return False
+
     elif image_url.startswith("/static/uploads/"):
         try:
             filename = image_url.replace("/static/uploads/", "")
