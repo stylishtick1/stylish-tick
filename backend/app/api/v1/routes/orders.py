@@ -4,10 +4,10 @@ import uuid
 import logging
 from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_optional_current_user
 from app.models.models import User, Cart, CartItem, Order, OrderItem, Product
 from app.schemas.schemas import OrderCreate, OrderResponse
 from app.core.limiter import limiter
@@ -22,23 +22,42 @@ def generate_order_number() -> str:
     return f"LWP-{date_str}-{rand_str}"
 
 def send_order_confirmation_email(user_email: str, order_number: str, total_amount: float):
-    # Asynchronously logged background action representing transactional mail dispatch.
-    logger.info(f"[Email Queue] Dispatching confirmation invoice to: {user_email} | Order: {order_number} | Amount: ${total_amount:.2f}")
+    if user_email:
+        logger.info(f"[Email Queue] Dispatching confirmation invoice to: {user_email} | Order: {order_number} | Amount: ${total_amount:.2f}")
 
 @router.post("", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
-@limiter.limit("5/minute")
+@limiter.limit("10/minute")
 def place_order(
     request: Request,
     order_data: OrderCreate,
     background_tasks: BackgroundTasks,
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_current_user),
     db: Session = Depends(get_db)
 ):
-    cart = db.query(Cart).filter(Cart.user_id == current_user.id).first()
-    if not cart or not cart.items:
+    items_to_process = []
+
+    if order_data.items and len(order_data.items) > 0:
+        # Items supplied directly in request (e.g. Guest checkout or custom order payload)
+        items_to_process = [{"product_id": item.product_id, "quantity": item.quantity} for item in order_data.items]
+    elif current_user:
+        # Pull items from DB Cart for logged in user if not explicitly passed
+        cart = db.query(Cart).filter(Cart.user_id == current_user.id).first()
+        if not cart or not cart.items:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Your cart is empty. Cannot place an order."
+            )
+        items_to_process = [{"product_id": item.product_id, "quantity": item.quantity} for item in cart.items]
+    else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Your cart is empty. Cannot place an order."
+            detail="Your cart is empty. Please add items before checking out."
+        )
+
+    if not items_to_process:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No products specified for checkout."
         )
 
     # Use a database transaction block to ensure atomicity
@@ -46,26 +65,26 @@ def place_order(
         total_amount = 0.0
         order_items_to_create = []
 
-        # Perform stock check and calculate total (with database lock on product stock to prevent race conditions)
-        for item in cart.items:
+        # Perform stock check and calculate total
+        for item in items_to_process:
             product = db.query(Product).filter(
-                Product.id == item.product_id, 
+                Product.id == item["product_id"], 
                 Product.is_deleted == False
             ).with_for_update().first()
             
             if not product:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Product with ID '{item.product_id}' is no longer available."
+                    detail=f"Product with ID '{item['product_id']}' is no longer available."
                 )
                 
-            item_total = product.price * item.quantity
+            item_total = product.price * item["quantity"]
             total_amount += item_total
             
             # Prepare OrderItem
             order_items_to_create.append({
                 "product_id": product.id,
-                "quantity": item.quantity,
+                "quantity": item["quantity"],
                 "price": product.price
             })
 
@@ -73,7 +92,10 @@ def place_order(
         order_number = generate_order_number()
         new_order = Order(
             order_number=order_number,
-            user_id=current_user.id,
+            user_id=current_user.id if current_user else None,
+            customer_name=order_data.full_name,
+            customer_phone=order_data.phone,
+            customer_email=order_data.email or (current_user.email if current_user else None),
             total_amount=total_amount,
             status="Pending",
             shipping_address=order_data.shipping_address,
@@ -85,7 +107,6 @@ def place_order(
             payment_status="Awaiting Verification" if order_data.payment_method == "UPI via WhatsApp" else "Pending"
         )
         db.add(new_order)
-        # Flush to database to generate new_order.id without committing yet
         db.flush()
 
         # Save all order items
@@ -98,20 +119,25 @@ def place_order(
             )
             db.add(new_item)
 
-        # Clear user's cart
-        db.query(CartItem).filter(CartItem.cart_id == cart.id).delete()
+        # Clear user's DB cart if logged in
+        if current_user:
+            cart = db.query(Cart).filter(Cart.user_id == current_user.id).first()
+            if cart:
+                db.query(CartItem).filter(CartItem.cart_id == cart.id).delete()
         
-        # Commit all changes atomically (Order creation, stock deduction, order items, cart clear)
+        # Commit all changes atomically
         db.commit()
         db.refresh(new_order)
 
-        # Dispatch confirmation email asynchronously in the background
-        background_tasks.add_task(
-            send_order_confirmation_email,
-            current_user.email,
-            new_order.order_number,
-            new_order.total_amount
-        )
+        # Dispatch confirmation email asynchronously if email available
+        target_email = new_order.customer_email
+        if target_email:
+            background_tasks.add_task(
+                send_order_confirmation_email,
+                target_email,
+                new_order.order_number,
+                new_order.total_amount
+            )
 
         return new_order
         
@@ -132,6 +158,23 @@ def get_order_history(
 ):
     orders = db.query(Order).filter(Order.user_id == current_user.id).order_by(Order.created_at.desc()).all()
     return orders
+
+@router.get("/track/{order_ref}", response_model=OrderResponse)
+def track_order(
+    order_ref: str,
+    db: Session = Depends(get_db)
+):
+    clean_ref = order_ref.strip()
+    order = db.query(Order).filter(
+        (Order.order_number == clean_ref) | (Order.customer_phone == clean_ref)
+    ).order_by(Order.created_at.desc()).first()
+    
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found. Please check your Order Reference or Phone Number."
+        )
+    return order
 
 @router.get("/{order_id}", response_model=OrderResponse)
 def get_order_details(

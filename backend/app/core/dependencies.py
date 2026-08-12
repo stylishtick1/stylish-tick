@@ -39,6 +39,22 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         
     return user
 
+def get_optional_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    if not token:
+        return None
+    try:
+        payload = decode_access_token(token)
+        if not payload:
+            return None
+        email: str = payload.get("sub")
+        role: str = payload.get("role")
+        if role == "admin" or not email:
+            return None
+        user = db.query(User).filter(User.email == email, User.is_active == True).first()
+        return user
+    except Exception:
+        return None
+
 def get_current_admin(token: str = Depends(oauth2_scheme)) -> str:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

@@ -181,6 +181,7 @@ export default function Header() {
             {[
               { name: 'Home', href: '/' },
               { name: 'Shop', href: '/shop' },
+              { name: 'Track Order', href: '/track-order' },
               { name: 'About', href: '/about' },
               { name: 'FAQ', href: '/faq' },
               { name: 'Contact', href: '/contact' }
@@ -426,6 +427,7 @@ export default function Header() {
               {[
                 { name: 'Home', href: '/' },
                 { name: 'Shop Collection', href: '/shop' },
+                { name: 'Track Order', href: '/track-order' },
                 { name: 'Our Heritage', href: '/about' },
                 { name: 'FAQ & Support', href: '/faq' },
                 { name: 'Direct Inquiry', href: '/contact' }

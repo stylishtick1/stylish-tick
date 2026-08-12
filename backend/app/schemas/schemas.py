@@ -197,18 +197,29 @@ class OrderItemResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class GuestOrderItem(BaseModel):
+    product_id: str
+    quantity: int = Field(1, ge=1)
+
 class OrderCreate(BaseModel):
+    full_name: str
+    phone: str
+    email: Optional[str] = None
     shipping_address: str
     city: str
     state: str
     country: str
     postal_code: str
-    payment_method: str = "Credit Card"
+    payment_method: str = "Cash on Delivery"
+    items: Optional[List[GuestOrderItem]] = None
 
 class OrderResponse(BaseModel):
     id: int
     order_number: str
-    user_id: int
+    user_id: Optional[int] = None
+    customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
+    customer_email: Optional[str] = None
     total_amount: float
     status: str
     shipping_address: str
@@ -224,16 +235,22 @@ class OrderResponse(BaseModel):
     @computed_field
     @property
     def user_name(self) -> str:
+        if hasattr(self, 'customer_name') and self.customer_name:
+            return self.customer_name
         return self.user.full_name if hasattr(self, 'user') and self.user else "Guest Customer"
 
     @computed_field
     @property
     def user_email(self) -> str:
+        if hasattr(self, 'customer_email') and self.customer_email:
+            return self.customer_email
         return self.user.email if hasattr(self, 'user') and self.user else "N/A"
 
     @computed_field
     @property
     def user_phone(self) -> Optional[str]:
+        if hasattr(self, 'customer_phone') and self.customer_phone:
+            return self.customer_phone
         return self.user.phone if hasattr(self, 'user') and self.user else None
 
     class Config:

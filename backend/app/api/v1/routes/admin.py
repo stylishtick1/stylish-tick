@@ -115,8 +115,38 @@ def edit_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
+    # If updated list of images provided, clean up removed images from Cloudinary
+    if product_data.images is not None:
+        existing_images = db.query(ProductImage).filter(ProductImage.product_id == product_id).all()
+        new_urls = {img.image_url for img in product_data.images}
+        
+        for old_img in existing_images:
+            if old_img.image_url not in new_urls:
+                delete_watch_image(old_img.image_url)
+                db.delete(old_img)
+        db.commit()
+
+        # Update or insert new/remaining images
+        for idx, img in enumerate(product_data.images):
+            existing = db.query(ProductImage).filter(
+                ProductImage.product_id == product_id, 
+                ProductImage.image_url == img.image_url
+            ).first()
+            if existing:
+                existing.display_order = img.display_order if img.display_order is not None else idx
+                existing.image_type = img.image_type
+            else:
+                new_img = ProductImage(
+                    product_id=product_id,
+                    image_url=img.image_url,
+                    image_type=img.image_type,
+                    display_order=img.display_order if img.display_order is not None else idx
+                )
+                db.add(new_img)
+        db.commit()
+
     # Update base product attributes
-    update_dict = product_data.model_dump(exclude_unset=True)
+    update_dict = product_data.model_dump(exclude_unset=True, exclude={"images"})
     for key, value in update_dict.items():
         setattr(product, key, value)
 
@@ -134,19 +164,28 @@ def delete_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     
-    # Soft delete
+    # Delete all associated images from Cloudinary storage
+    for img in product.images:
+        delete_watch_image(img.image_url)
+    
+    # Soft delete product
     product.is_deleted = True
     db.commit()
-    return {"message": f"Product '{product.name}' has been soft-deleted successfully."}
+    return {"message": f"Product '{product.name}' has been soft-deleted and Cloudinary images purged successfully."}
 
 @router.delete("/watches-purge/all")
 def clear_all_products(
     admin: str = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    db.query(Product).update({Product.is_deleted: True})
+    products = db.query(Product).filter(Product.is_deleted == False).all()
+    for product in products:
+        for img in product.images:
+            delete_watch_image(img.image_url)
+        product.is_deleted = True
+        
     db.commit()
-    return {"message": "All products have been cleared from store inventory successfully."}
+    return {"message": "All products have been cleared and Cloudinary images purged successfully."}
 
 # --- PRODUCT IMAGE CRUD & REORDER ---
 @router.post("/watches/{product_id}/images", response_model=ProductImageResponse)

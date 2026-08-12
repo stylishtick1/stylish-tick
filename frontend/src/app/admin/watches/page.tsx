@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Edit2, Trash2, X, Upload, Check, AlertCircle } from 'lucide-react';
+import { Plus, Search, Edit2, Copy, Trash2, X, Upload, Check, AlertCircle } from 'lucide-react';
 import api from '../../../services/api';
 
 interface Watch {
@@ -51,6 +51,7 @@ export default function AdminWatchesPage() {
 
   // Image upload state
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [newBrandName, setNewBrandName] = useState('');
   const [newCategoryName, setNewCategoryName] = useState('');
 
@@ -120,6 +121,33 @@ export default function AdminWatchesPage() {
     setIsFormOpen(true);
   };
 
+  const handleDuplicateWatch = (watch: Watch) => {
+    setEditingWatch(null);
+    setNewBrandName('');
+    setNewCategoryName('');
+    setFormData({
+      name: `${watch.name} (Variant)`,
+      brand: watch.brand,
+      description: watch.description,
+      price: watch.price,
+      stock: watch.stock,
+      category: watch.category,
+      movement_type: watch.movement_type || '',
+      strap_material: watch.strap_material || '',
+      water_resistance: watch.water_resistance || '',
+      warranty_years: watch.warranty_years,
+      featured: watch.featured,
+      parent_id: watch.parent_id || String(watch.id),
+      images: watch.images.map(img => ({
+        image_url: img.image_url,
+        image_type: img.image_type,
+        display_order: img.display_order
+      }))
+    });
+    setError(null);
+    setIsFormOpen(true);
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     
@@ -139,7 +167,7 @@ export default function AdminWatchesPage() {
     });
   };
 
-  // Upload image to backend
+  // Upload multiple images to backend
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -147,28 +175,36 @@ export default function AdminWatchesPage() {
     setUploadingImage(true);
     setError(null);
     
-    const file = files[0];
-    const imagePayload = new FormData();
-    imagePayload.append('file', file);
+    const selectedFiles = Array.from(files);
+    const newImages: Array<{ image_url: string; image_type: string; display_order: number }> = [];
     
     try {
-      const response = await api.post('/admin/upload-image', imagePayload, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      
-      const uploadedUrl = response.data.image_url;
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        const imagePayload = new FormData();
+        imagePayload.append('file', file);
+        
+        const response = await api.post('/admin/upload-image', imagePayload, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        
+        const uploadedUrl = response.data.image_url;
+        newImages.push({
+          image_url: uploadedUrl,
+          image_type: (formData.images.length === 0 && i === 0) ? 'Front View' : 'Gallery View',
+          display_order: formData.images.length + i
+        });
+      }
+
       setFormData((prev) => ({
         ...prev,
-        images: [...prev.images, {
-          image_url: uploadedUrl,
-          image_type: 'Front View',
-          display_order: prev.images.length
-        }]
+        images: [...prev.images, ...newImages]
       }));
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to upload image.');
+      setError(err.response?.data?.detail || 'Failed to upload image(s).');
     } finally {
       setUploadingImage(false);
+      e.target.value = '';
     }
   };
 
@@ -181,6 +217,8 @@ export default function AdminWatchesPage() {
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting || uploadingImage) return;
+
     setError(null);
     setSuccess(null);
 
@@ -204,6 +242,7 @@ export default function AdminWatchesPage() {
       parent_id: formData.parent_id === '' ? null : formData.parent_id
     };
 
+    setSubmitting(true);
     try {
       if (editingWatch) {
         // Edit Watch
@@ -221,6 +260,8 @@ export default function AdminWatchesPage() {
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to submit timepiece.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -349,6 +390,13 @@ export default function AdminWatchesPage() {
                       )}
                     </td>
                     <td className="p-4 text-right space-x-2">
+                      <button
+                        onClick={() => handleDuplicateWatch(watch)}
+                        className="p-1.5 hover:bg-zinc-100 text-zinc-500 hover:text-primary rounded"
+                        title="Duplicate / Clone Watch"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={() => handleOpenEdit(watch)}
                         className="p-1.5 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 rounded"
@@ -598,13 +646,14 @@ export default function AdminWatchesPage() {
                   <input 
                     type="file" 
                     accept="image/*"
+                    multiple
                     onChange={handleImageUpload}
-                    disabled={uploadingImage}
+                    disabled={uploadingImage || submitting}
                     className="absolute inset-0 opacity-0 cursor-pointer"
                   />
                   {uploadingImage && (
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center text-xs text-primary font-semibold">
-                      Uploading image...
+                      Uploading image(s)...
                     </div>
                   )}
                 </div>
@@ -615,15 +664,17 @@ export default function AdminWatchesPage() {
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="px-4 py-2 border border-zinc-200 hover:bg-zinc-50 text-zinc-600 rounded"
+                  disabled={submitting || uploadingImage}
+                  className="px-4 py-2 border border-zinc-200 hover:bg-zinc-50 disabled:opacity-50 text-zinc-600 rounded"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-primary hover:bg-primary-hover text-primary-foreground font-semibold rounded"
+                  disabled={submitting || uploadingImage}
+                  className="px-6 py-2 bg-primary hover:bg-primary-hover disabled:opacity-50 text-primary-foreground font-semibold rounded transition-colors flex items-center gap-2"
                 >
-                  Save Timepiece
+                  {submitting ? 'Saving Timepiece...' : 'Save Timepiece'}
                 </button>
               </div>
 

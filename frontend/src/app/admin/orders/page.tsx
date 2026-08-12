@@ -88,6 +88,36 @@ export default function AdminOrdersPage() {
     setNewPaymentStatus(order.payment_status);
   };
 
+  const handleQuickStatusChange = async (order: Order, newStatusVal: string) => {
+    try {
+      await api.put(`/admin/orders/${order.id}`, {
+        status: newStatusVal,
+        payment_status: order.payment_status
+      });
+      fetchOrders();
+    } catch (err) {
+      alert('Failed to update order status.');
+    }
+  };
+
+  const getWhatsAppLink = (order: Order) => {
+    const rawPhone = order.user_phone ? order.user_phone.replace(/\D/g, '') : '';
+    const phone = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
+    
+    let text = '';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://stylishtick.com';
+    
+    if (order.status === 'Shipped') {
+      text = `Hi ${order.user_name}, your StylishTick order #${order.order_number} (₹${order.total_amount.toLocaleString()}) has been shipped! 🚀\n\nTrack your order here: ${origin}/track-order?ref=${order.order_number}\n\nThank you for shopping with us!`;
+    } else if (order.status === 'Delivered') {
+      text = `Hi ${order.user_name}, your StylishTick order #${order.order_number} has been delivered! 🎉\n\nWe hope you love your new timepiece. Thank you for choosing StylishTick!`;
+    } else {
+      text = `Hi ${order.user_name}, update regarding your StylishTick order #${order.order_number}:\nCurrent Status: ${order.status}\nPayment: ${order.payment_status}\nTrack: ${origin}/track-order?ref=${order.order_number}`;
+    }
+    
+    return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+  };
+
   const handleUpdateStatusSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingOrder) return;
@@ -240,12 +270,20 @@ export default function AdminOrdersPage() {
                   <td className="p-4 whitespace-nowrap">{new Date(o.created_at).toLocaleDateString()}</td>
                   <td className="p-4 font-mono font-semibold text-zinc-900 whitespace-nowrap">₹{o.total_amount.toLocaleString()}</td>
                   <td className="p-4 whitespace-nowrap">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
-                      o.status === 'Delivered' ? 'bg-primary/10 text-primary' : 
-                      o.status === 'Cancelled' ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-zinc-100 text-zinc-800'
-                    }`}>
-                      {o.status}
-                    </span>
+                    <select
+                      value={o.status}
+                      onChange={(e) => handleQuickStatusChange(o, e.target.value)}
+                      className={`px-2.5 py-1 rounded text-[10px] font-bold outline-none cursor-pointer border transition-colors ${
+                        o.status === 'Delivered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
+                        o.status === 'Shipped' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                        o.status === 'Cancelled' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-800 border-amber-200'
+                      }`}
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Shipped">Shipped 🚀</option>
+                      <option value="Delivered">Delivered 🎉</option>
+                      <option value="Cancelled">Cancelled ❌</option>
+                    </select>
                   </td>
                   <td className="p-4 whitespace-nowrap">
                     <span className={`px-2 py-0.5 rounded font-semibold ${
@@ -255,7 +293,16 @@ export default function AdminOrdersPage() {
                       {o.payment_status}
                     </span>
                   </td>
-                  <td className="p-4 text-right space-x-2 whitespace-nowrap">
+                  <td className="p-4 text-right space-x-1.5 whitespace-nowrap">
+                    <a
+                      href={getWhatsAppLink(o)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 rounded inline-block transition-colors"
+                      title="Send WhatsApp Tracking Update to Customer"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                    </a>
                     <button
                       onClick={() => setInspectingOrder(o)}
                       className="p-1.5 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 rounded"
@@ -266,7 +313,7 @@ export default function AdminOrdersPage() {
                     <button
                       onClick={() => handleOpenEditStatus(o)}
                       className="p-1.5 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 rounded"
-                      title="Edit Status"
+                      title="Full Edit Status"
                     >
                       <Edit className="w-4 h-4" />
                     </button>
@@ -313,12 +360,12 @@ export default function AdminOrdersPage() {
                   )}
                   <div className="pt-2">
                     <a 
-                      href={`https://wa.me/919699986430?text=${encodeURIComponent(`Hello ${inspectingOrder.user_name}, regard your order #${inspectingOrder.order_number} at StylishTick...`)}`}
+                      href={getWhatsAppLink(inspectingOrder)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-[11px] font-semibold transition-colors shadow-xs"
                     >
-                      <MessageCircle className="w-3.5 h-3.5" /> Contact via WhatsApp
+                      <MessageCircle className="w-3.5 h-3.5" /> Send WhatsApp Order Update
                     </a>
                   </div>
                 </div>

@@ -111,7 +111,7 @@ export default function Footer() {
             <ul className="space-y-2 text-[14px] text-[#9E9E9E]">
               {[
                 { label: 'Contact Us', href: '/contact' },
-                { label: 'Track Order', href: '/profile' },
+                { label: 'Track Order', href: '/track-order' },
                 { label: 'Shipping Information', href: '/faq#shipping' },
                 { label: 'Returns & Refunds', href: '/faq#returns' },
                 { label: 'Warranty Policy', href: '/faq#warranty' },
