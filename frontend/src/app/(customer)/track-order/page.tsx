@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { Search, Package, CheckCircle, Clock, Truck, MapPin, User, Phone, ShieldAlert } from 'lucide-react';
 import api from '../../../services/api';
 
-export default function TrackOrderPage() {
+function TrackOrderForm() {
   const searchParams = useSearchParams();
   const initialRef = searchParams.get('ref') || '';
   
@@ -164,5 +164,18 @@ export default function TrackOrderPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function TrackOrderPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-20 max-w-3xl text-center space-y-4">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-xs text-muted-foreground uppercase tracking-widest">Loading order tracking portal...</p>
+      </div>
+    }>
+      <TrackOrderForm />
+    </Suspense>
   );
 }
