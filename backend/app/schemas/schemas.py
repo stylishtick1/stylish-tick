@@ -110,15 +110,16 @@ class ProductResponse(ProductBase):
 class ReviewCreate(BaseModel):
     rating: int = Field(..., ge=1, le=5)
     comment: Optional[str] = None
+    reviewer_name: Optional[str] = "Verified Customer"
 
 class ReviewResponse(BaseModel):
     id: int
-    user_id: int
+    user_id: Optional[int] = None
     product_id: str
     rating: int
     comment: Optional[str] = None
     created_at: datetime
-    user_name: Optional[str] = None
+    user_name: Optional[str] = "Verified Customer"
 
     class Config:
         from_attributes = True

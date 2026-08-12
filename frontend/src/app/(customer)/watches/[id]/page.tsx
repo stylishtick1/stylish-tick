@@ -69,6 +69,7 @@ export default function WatchDetailsPage() {
   const [actionSuccess, setActionSuccess] = useState(false);
   
   // Review Form States
+  const [reviewerName, setReviewerName] = useState('');
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
@@ -83,23 +84,19 @@ export default function WatchDetailsPage() {
       setError(null);
       
       // Fetch related watches
-      const relatedRes = await api.get(`/watches?category=${encodeURIComponent(res.data.category)}&limit=4`);
-      // Filter out the current watch
-      const filtered = relatedRes.data.filter((w: WatchListItem) => w.id !== id);
-      setRelatedWatches(filtered);
+      if (res.data.category) {
+        const relatedRes = await api.get(`/watches?category=${encodeURIComponent(res.data.category)}&limit=4`);
+        setRelatedWatches(relatedRes.data.filter((w: WatchListItem) => String(w.id) !== String(id)));
+      }
     } catch (err: any) {
-      setError('Failed to load timepiece details. It may not exist.');
+      setError('Watch details not found.');
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    if (id) {
-      fetchWatchDetails();
-      setActiveImageIdx(0);
-      setQuantity(1);
-    }
+    fetchWatchDetails();
   }, [id]);
 
   const handleAddToCart = async () => {
@@ -108,9 +105,9 @@ export default function WatchDetailsPage() {
     try {
       await addItem(watch, quantity, isLoggedIn);
       setActionSuccess(true);
-      setTimeout(() => setActionSuccess(false), 3000);
+      setTimeout(() => setActionSuccess(false), 2500);
     } catch (err) {
-      alert('Failed to add item to collection.');
+      alert('Failed to add timepiece to cart.');
     } finally {
       setAddingToCart(false);
     }
@@ -118,13 +115,10 @@ export default function WatchDetailsPage() {
 
   const handleBuyNow = async () => {
     if (!watch) return;
-    try {
-      await addItem(watch, quantity, isLoggedIn);
-      router.push('/checkout');
-    } catch (err) {
-      alert('Unable to process request.');
-    }
+    await addItem(watch, quantity, isLoggedIn);
+    router.push('/checkout');
   };
+
   const handleWhatsAppInquiry = () => {
     if (!watch) return;
     // Replace with your actual WhatsApp business number (include country code, e.g. 91 for India)
@@ -136,21 +130,18 @@ export default function WatchDetailsPage() {
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isLoggedIn) {
-      router.push('/login');
-      return;
-    }
     setReviewError(null);
     setSubmittingReview(true);
     try {
       await api.post(`/reviews/${id}`, {
         rating: reviewRating,
-        comment: reviewComment
+        comment: reviewComment,
+        reviewer_name: reviewerName.trim() || 'Verified Customer'
       });
       setReviewComment('');
+      setReviewerName('');
       setReviewSuccess(true);
       setTimeout(() => setReviewSuccess(false), 3000);
-      // Reload details to show new review
       fetchWatchDetails();
     } catch (err: any) {
       setReviewError(err.response?.data?.detail || 'Failed to submit review.');
@@ -503,67 +494,69 @@ export default function WatchDetailsPage() {
         {/* Write review form */}
         <div className="bg-card border border-border p-6 rounded-lg space-y-4 h-fit">
           <h3 className="font-semibold text-sm uppercase tracking-wider">Leave a Review</h3>
-          {isLoggedIn ? (
-            <form onSubmit={handleReviewSubmit} className="space-y-4 text-xs">
-              
-              {/* Star selector */}
-              <div className="space-y-1">
-                <label className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wider">Your Rating</label>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setReviewRating(star)}
-                      className="text-primary hover:scale-110 transition-transform"
-                    >
-                      <Star className={`w-6 h-6 ${star <= reviewRating ? 'fill-primary' : 'text-muted-foreground/30'}`} />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Comment text area */}
-              <div className="space-y-1">
-                <label className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wider">Comments</label>
-                <textarea
-                  required
-                  rows={4}
-                  placeholder="Share your experience with this timepiece..."
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                  className="w-full bg-muted border border-border focus:border-primary/50 rounded p-3 outline-none resize-none"
-                />
-              </div>
-
-              {reviewSuccess && (
-                <p className="text-[10px] text-primary font-medium">Review submitted successfully!</p>
-              )}
-              {reviewError && (
-                <p className="text-[10px] text-destructive font-medium">{reviewError}</p>
-              )}
-
-              <button
-                type="submit"
-                disabled={submittingReview}
-                className="w-full py-2.5 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-primary-foreground font-semibold uppercase tracking-widest rounded flex items-center justify-center gap-1.5 transition-colors shadow"
-              >
-                {submittingReview ? (
-                  <span className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Send className="w-3.5 h-3.5" />
-                )}
-                Post Review
-              </button>
-            </form>
-          ) : (
-            <div className="space-y-3 text-center text-xs p-4 bg-muted/50 rounded">
-              <p className="text-muted-foreground">You must be logged in to leave reviews.</p>
-              <Link href="/login" className="block w-full py-2 border border-primary text-primary hover:bg-primary/10 rounded font-semibold uppercase tracking-wider">
-                Log In
-              </Link>
+          <form onSubmit={handleReviewSubmit} className="space-y-4 text-xs">
+            {/* Name Input */}
+            <div className="space-y-1">
+              <label className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wider">Your Name</label>
+              <input 
+                type="text"
+                placeholder="e.g. Rahul Sharma"
+                value={reviewerName}
+                onChange={(e) => setReviewerName(e.target.value)}
+                className="w-full bg-muted border border-border focus:border-primary/50 rounded px-3 py-2 text-xs outline-none"
+              />
             </div>
-          )}
+
+            {/* Star selector */}
+            <div className="space-y-1">
+              <label className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wider">Your Rating</label>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    className="text-primary hover:scale-110 transition-transform"
+                  >
+                    <Star className={`w-5 h-5 ${star <= reviewRating ? 'fill-primary' : 'text-muted-foreground/30'}`} />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Comment text area */}
+            <div className="space-y-1">
+              <label className="text-muted-foreground font-semibold uppercase text-[9px] tracking-wider">Comments</label>
+              <textarea
+                required
+                rows={3}
+                placeholder="Share your experience with this timepiece..."
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                className="w-full bg-muted border border-border focus:border-primary/50 rounded p-3 text-xs outline-none resize-none"
+              />
+            </div>
+
+            {reviewSuccess && (
+              <p className="text-[10px] text-primary font-medium">Review submitted successfully!</p>
+            )}
+            {reviewError && (
+              <p className="text-[10px] text-destructive font-medium">{reviewError}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={submittingReview}
+              className="w-full py-2.5 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-primary-foreground font-semibold uppercase tracking-widest rounded flex items-center justify-center gap-1.5 transition-colors shadow"
+            >
+              {submittingReview ? (
+                <span className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Send className="w-3.5 h-3.5" />
+              )}
+              Post Review
+            </button>
+          </form>
         </div>
       </section>
 

@@ -142,7 +142,8 @@ class Review(Base):
     __tablename__ = "reviews"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    reviewer_name = Column(String, nullable=True)
     product_id = Column(String, ForeignKey("products.id"), nullable=False)
     rating = Column(Integer, default=5)  # 1-5 stars
     comment = Column(String, nullable=True)
