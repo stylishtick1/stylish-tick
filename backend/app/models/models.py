@@ -71,7 +71,7 @@ class ProductImage(Base):
     __tablename__ = "product_images"
 
     id = Column(Integer, primary_key=True, index=True)
-    product_id = Column(String, ForeignKey("products.id"), nullable=False)
+    product_id = Column(String, ForeignKey("products.id"), nullable=False, index=True)
     image_url = Column(String, nullable=False)
     image_type = Column(String, nullable=False)  # Front View, Side View, etc.
     display_order = Column(Integer, default=0)
@@ -94,7 +94,7 @@ class CartItem(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     cart_id = Column(Integer, ForeignKey("carts.id"), nullable=False)
-    product_id = Column(String, ForeignKey("products.id"), nullable=False)
+    product_id = Column(String, ForeignKey("products.id"), nullable=False, index=True)
     quantity = Column(Integer, default=1)
 
     # Relationships
@@ -130,7 +130,7 @@ class OrderItem(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
-    product_id = Column(String, ForeignKey("products.id"), nullable=False)
+    product_id = Column(String, ForeignKey("products.id"), nullable=False, index=True)
     quantity = Column(Integer, default=1)
     price = Column(Float, nullable=False)
 
@@ -144,7 +144,7 @@ class Review(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     reviewer_name = Column(String, nullable=True)
-    product_id = Column(String, ForeignKey("products.id"), nullable=False)
+    product_id = Column(String, ForeignKey("products.id"), nullable=False, index=True)
     rating = Column(Integer, default=5)  # 1-5 stars
     comment = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
@@ -158,7 +158,7 @@ class Wishlist(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    product_id = Column(String, ForeignKey("products.id"), nullable=False)
+    product_id = Column(String, ForeignKey("products.id"), nullable=False, index=True)
 
     # Relationships
     user = relationship("User", back_populates="wishlist")

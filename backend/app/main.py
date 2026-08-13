@@ -20,6 +20,8 @@ from app.core.config import settings
 from app.models.models import Product, ProductImage, User
 from app.core.security import get_password_hash
 
+from fastapi.middleware.gzip import GZipMiddleware
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Ensure static directory exists
@@ -27,6 +29,23 @@ async def lifespan(app: FastAPI):
     
     # Create tables
     Base.metadata.create_all(bind=engine)
+
+    # Ensure database columns exist (auto-migration for added columns in production DB)
+    try:
+        from sqlalchemy import text
+        db_migration = SessionLocal()
+        db_migration.execute(text("ALTER TABLE reviews ADD COLUMN IF NOT EXISTS reviewer_name VARCHAR;"))
+        db_migration.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name VARCHAR;"))
+        db_migration.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_phone VARCHAR;"))
+        db_migration.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_email VARCHAR;"))
+        db_migration.commit()
+    except Exception as migration_err:
+        print(f"Auto-migration info: {migration_err}")
+    finally:
+        try:
+            db_migration.close()
+        except NameError:
+            pass
     
     # Seed Database if empty
     db = SessionLocal()
@@ -62,6 +81,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# GZip compression middleware for fast response payloads
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 from sqlalchemy.exc import IntegrityError
 from fastapi.responses import JSONResponse
