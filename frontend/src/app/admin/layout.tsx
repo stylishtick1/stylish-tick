@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Watch, Users, ShoppingBag, LogOut, ChevronLeft, Shield, Bell } from 'lucide-react';
+import { LayoutDashboard, Watch, Users, ShoppingBag, LogOut, ChevronLeft, Shield, Bell, Tag } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import api from '../../services/api';
 
@@ -99,6 +99,7 @@ export default function AdminLayout({
   const menuItems = [
     { name: 'Analytics', href: '/admin', icon: LayoutDashboard },
     { name: 'Watches CRUD', href: '/admin/watches', icon: Watch },
+    { name: 'Brand Control', href: '/admin/brands', icon: Tag },
     { name: 'Customers', href: '/admin/customers', icon: Users },
     { name: 'Orders Control', href: '/admin/orders', icon: ShoppingBag }
   ];
