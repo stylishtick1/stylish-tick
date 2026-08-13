@@ -60,7 +60,18 @@ def get_admin_brands(
             db.add(new_b)
             existing_names.add(pb[0])
     db.commit()
-    return db.query(Brand).order_by(Brand.name.asc()).all()
+    
+    all_brands = db.query(Brand).order_by(Brand.name.asc()).all()
+    result = []
+    for b in all_brands:
+        count = db.query(Product).filter(Product.brand == b.name, Product.is_deleted == False).count()
+        result.append({
+            "id": b.id,
+            "name": b.name,
+            "product_count": count,
+            "created_at": b.created_at
+        })
+    return result
 
 @router.post("/brands")
 def create_admin_brand(
@@ -82,6 +93,31 @@ def create_admin_brand(
     db.refresh(new_brand)
     return new_brand
 
+@router.put("/brands/{old_name}")
+def rename_admin_brand(
+    old_name: str,
+    payload: dict,
+    admin: str = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    new_name = payload.get("name", "").strip()
+    if not new_name:
+        raise HTTPException(status_code=400, detail="New brand name is required")
+
+    clean_old = old_name.strip()
+    # Update Brand table
+    brand = db.query(Brand).filter(Brand.name.ilike(clean_old)).first()
+    if brand:
+        brand.name = new_name
+    
+    # Update all products with this brand
+    products = db.query(Product).filter(Product.brand.ilike(clean_old)).all()
+    for p in products:
+        p.brand = new_name
+        
+    db.commit()
+    return {"message": f"Brand '{old_name}' updated to '{new_name}' across database."}
+
 @router.delete("/brands/{brand_name}")
 def delete_admin_brand(
     brand_name: str,
@@ -91,7 +127,7 @@ def delete_admin_brand(
     clean_target = brand_name.strip()
     brands = db.query(Brand).all()
     for b in brands:
-        if b.name.strip().lower() == clean_target.lower() or b.name.replace("_", "").strip().lower() == clean_target.lower():
+        if b.name.strip().lower() == clean_target.lower():
             db.delete(b)
             
     db.commit()
