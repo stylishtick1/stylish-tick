@@ -152,40 +152,46 @@ def get_product_details(product_id: str, db: Session = Depends(get_db)):
             detail="Product not found"
         )
         
-    # Get reviews and calculate average rating
-    from sqlalchemy.orm import joinedload
-    reviews = db.query(Review).options(joinedload(Review.user)).filter(Review.product_id == product_id).all()
-    avg_rating = db.query(func.avg(Review.rating)).filter(Review.product_id == product_id).scalar()
-    
-    # Map reviews to includes user names
+    # Get reviews and calculate average rating in memory
     review_responses = []
-    for r in reviews:
-        user_name = r.user.full_name if r.user else getattr(r, 'reviewer_name', None) or "Verified Customer"
-        review_responses.append(
-            ReviewResponse(
-                id=r.id,
-                user_id=r.user_id,
-                product_id=r.product_id,
-                rating=r.rating,
-                comment=r.comment,
-                created_at=r.created_at,
-                user_name=user_name
-            )
-        )
+    avg_rating = 0.0
+    try:
+        from sqlalchemy.orm import joinedload
+        reviews = db.query(Review).options(joinedload(Review.user)).filter(Review.product_id == product_id).all()
+        if reviews:
+            avg_rating = sum(r.rating for r in reviews) / len(reviews)
+            for r in reviews:
+                user_name = (r.user.full_name if r.user else None) or getattr(r, 'reviewer_name', None) or "Verified Customer"
+                review_responses.append(
+                    ReviewResponse(
+                        id=r.id,
+                        user_id=r.user_id,
+                        product_id=r.product_id,
+                        rating=r.rating,
+                        comment=r.comment,
+                        created_at=r.created_at,
+                        user_name=user_name
+                    )
+                )
+    except Exception as e:
+        print(f"Non-fatal error querying reviews for product {product_id}: {e}")
 
     # Fetch variants
     variants_list = []
-    if product.parent_id:
-        parent_product = db.query(Product).options(selectinload(Product.images)).filter(Product.id == product.parent_id, Product.is_deleted == False).first()
-        if parent_product:
-            variants_list.append(parent_product)
-        siblings = db.query(Product).options(selectinload(Product.images)).filter(Product.parent_id == product.parent_id, Product.id != product_id, Product.is_deleted == False).all()
-        variants_list.extend(siblings)
-    else:
-        children = db.query(Product).options(selectinload(Product.images)).filter(Product.parent_id == product_id, Product.is_deleted == False).all()
-        variants_list.extend(children)
+    try:
+        if product.parent_id:
+            parent_product = db.query(Product).options(selectinload(Product.images)).filter(Product.id == product.parent_id, Product.is_deleted == False).first()
+            if parent_product:
+                variants_list.append(parent_product)
+            siblings = db.query(Product).options(selectinload(Product.images)).filter(Product.parent_id == product.parent_id, Product.id != product_id, Product.is_deleted == False).all()
+            variants_list.extend(siblings)
+        else:
+            children = db.query(Product).options(selectinload(Product.images)).filter(Product.parent_id == product_id, Product.is_deleted == False).all()
+            variants_list.extend(children)
+    except Exception as e:
+        print(f"Non-fatal error querying variants for product {product_id}: {e}")
         
-    response_data = ProductDetailResponse(
+    return ProductDetailResponse(
         id=product.id,
         name=product.name,
         brand=product.brand,
@@ -200,8 +206,6 @@ def get_product_details(product_id: str, db: Session = Depends(get_db)):
         specifications=product.specifications or {},
         images=[img for img in product.images],
         reviews=review_responses,
-        average_rating=float(avg_rating) if avg_rating is not None else 0.0,
+        average_rating=float(round(avg_rating, 1)),
         variants=variants_list
     )
-    
-    return response_data

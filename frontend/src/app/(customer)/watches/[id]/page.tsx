@@ -78,19 +78,25 @@ export default function WatchDetailsPage() {
 
   // Fetch watch details
   async function fetchWatchDetails() {
+    setLoading(true);
+    setError(null);
     try {
       const res = await api.get(`/watches/${id}`);
       setWatch(res.data);
-      setError(null);
+      setLoading(false);
       
-      // Fetch related watches
-      if (res.data.category) {
-        const relatedRes = await api.get(`/watches?category=${encodeURIComponent(res.data.category)}&limit=4`);
-        setRelatedWatches(relatedRes.data.filter((w: WatchListItem) => String(w.id) !== String(id)));
+      // Fetch related watches asynchronously without blocking main product page
+      if (res.data?.category) {
+        try {
+          const relatedRes = await api.get(`/watches?category=${encodeURIComponent(res.data.category)}&limit=5`);
+          setRelatedWatches((relatedRes.data || []).filter((w: WatchListItem) => String(w.id) !== String(id)));
+        } catch (relatedErr) {
+          console.warn('Could not load complementary timepieces:', relatedErr);
+        }
       }
     } catch (err: any) {
+      console.error('Watch details error:', err);
       setError('Watch details not found.');
-    } finally {
       setLoading(false);
     }
   }
