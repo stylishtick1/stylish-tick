@@ -8,7 +8,7 @@ from app.core.database import get_db
 from app.core.config import settings
 from app.core.security import create_access_token
 from app.core.dependencies import get_current_admin
-from app.models.models import User, Product, ProductImage, Order, OrderItem
+from app.models.models import User, Product, ProductImage, Order, OrderItem, Brand
 from app.schemas.schemas import (
     AdminLogin, Token, UserResponse, ProductResponse, ProductCreate, ProductUpdate,
     OrderResponse, OrderStatusUpdate, ProductImageCreate, ProductImageResponse
@@ -19,7 +19,6 @@ from app.core.limiter import limiter
 logger = logging.getLogger(__name__)
 
 def send_payment_confirmation_email(user_email: str, order_number: str, total_amount: float, items: list):
-    # Log payment confirmation email details
     logger.info("======== TRANSACTIONAL EMAIL: PAYMENT CONFIRMED ========")
     logger.info(f"Recipient: {user_email}")
     logger.info(f"Subject: Payment Confirmed for Order #{order_number}")
@@ -45,6 +44,58 @@ def admin_login(request: Request, login_data: AdminLogin):
         data={"sub": settings.ADMIN_USERNAME, "role": "admin"}
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+# --- BRAND MANAGEMENT ---
+@router.get("/brands")
+def get_admin_brands(
+    admin: str = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    brands = db.query(Brand).all()
+    existing_names = {b.name for b in brands}
+    prod_brands = db.query(Product.brand).filter(Product.is_deleted == False).distinct().all()
+    for pb in prod_brands:
+        if pb[0] and pb[0] not in existing_names:
+            new_b = Brand(name=pb[0])
+            db.add(new_b)
+            existing_names.add(pb[0])
+    db.commit()
+    return db.query(Brand).order_by(Brand.name.asc()).all()
+
+@router.post("/brands")
+def create_admin_brand(
+    payload: dict,
+    admin: str = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    brand_name = payload.get("name", "").strip()
+    if not brand_name:
+        raise HTTPException(status_code=400, detail="Brand name is required")
+        
+    existing = db.query(Brand).filter(Brand.name.ilike(brand_name)).first()
+    if existing:
+        return existing
+        
+    new_brand = Brand(name=brand_name)
+    db.add(new_brand)
+    db.commit()
+    db.refresh(new_brand)
+    return new_brand
+
+@router.delete("/brands/{brand_name}")
+def delete_admin_brand(
+    brand_name: str,
+    admin: str = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    clean_target = brand_name.strip()
+    brands = db.query(Brand).all()
+    for b in brands:
+        if b.name.strip().lower() == clean_target.lower() or b.name.replace("_", "").strip().lower() == clean_target.lower():
+            db.delete(b)
+            
+    db.commit()
+    return {"message": f"Brand '{brand_name}' removed successfully."}
 
 # --- IMAGE UPLOAD ---
 @router.post("/upload-image")

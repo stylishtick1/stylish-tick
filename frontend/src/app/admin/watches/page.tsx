@@ -55,11 +55,33 @@ export default function AdminWatchesPage() {
   const [newBrandName, setNewBrandName] = useState('');
   const [newCategoryName, setNewCategoryName] = useState('');
 
+  // Brand Management States
+  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
+  const [isBrandManagerOpen, setIsBrandManagerOpen] = useState(false);
+  const [newCustomBrand, setNewCustomBrand] = useState('');
+
+  async function fetchBrands() {
+    try {
+      const res = await api.get('/admin/brands');
+      if (Array.isArray(res.data)) {
+        const names = res.data.map((b: any) => (typeof b === 'string' ? b : b.name)).filter(Boolean);
+        setAvailableBrands(Array.from(new Set(names)) as string[]);
+      }
+    } catch (err) {
+      try {
+        const fallbackRes = await api.get('/watches/brands');
+        setAvailableBrands(Array.from(new Set(fallbackRes.data || [])) as string[]);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }
+
   async function fetchWatches() {
     setLoading(true);
     try {
       const res = await api.get('/watches?limit=100');
-      setWatches(res.data);
+      setWatches(res.data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -69,7 +91,34 @@ export default function AdminWatchesPage() {
 
   useEffect(() => {
     fetchWatches();
+    fetchBrands();
   }, []);
+
+  const handleAddNewBrand = async (name: string) => {
+    const cleanName = name.trim();
+    if (!cleanName) return;
+    try {
+      await api.post('/admin/brands', { name: cleanName });
+      setNewCustomBrand('');
+      fetchBrands();
+      setSuccess(`Brand '${cleanName}' added.`);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError('Failed to add brand.');
+    }
+  };
+
+  const handleDeleteBrand = async (brandName: string) => {
+    if (!confirm(`Are you sure you want to remove brand '${brandName}'?`)) return;
+    try {
+      await api.delete(`/admin/brands/${encodeURIComponent(brandName)}`);
+      fetchBrands();
+      setSuccess(`Brand '${brandName}' removed.`);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError('Failed to delete brand.');
+    }
+  };
 
   const handleOpenCreate = () => {
     setEditingWatch(null);
@@ -308,6 +357,12 @@ export default function AdminWatchesPage() {
         </div>
         
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsBrandManagerOpen(true)}
+            className="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-900 text-white font-semibold rounded text-xs uppercase tracking-wider transition-colors"
+          >
+            Manage Brands
+          </button>
           {watches.length > 0 && (
             <button
               onClick={handleClearAllProducts}
@@ -378,7 +433,7 @@ export default function AdminWatchesPage() {
                     </td>
                     <td className="p-4">
                       <p className="font-semibold text-zinc-800">{watch.name}</p>
-                      <p className="text-[10px] text-zinc-500">{watch.brand}</p>
+                      <p className="text-[10px] text-zinc-500">{watch.brand ? watch.brand.replace(/_/g, '') : ''}</p>
                     </td>
                     <td className="p-4">{watch.category}</td>
                     <td className="p-4 font-mono font-semibold text-primary">₹{watch.price.toLocaleString()}</td>
@@ -469,7 +524,7 @@ export default function AdminWatchesPage() {
                   >
                     <option value="">Select Brand</option>
                     {Array.from(new Set([
-                      'Rolex', 'Omega', 'Seiko', 'Titan', 'Tommy Hilfiger', 'Hublot', 'Fossil',
+                      ...availableBrands,
                       ...(editingWatch ? [editingWatch.brand] : []),
                       ...watches.map(w => w.brand)
                     ].filter(Boolean))).map(b => (
@@ -503,7 +558,7 @@ export default function AdminWatchesPage() {
                     .filter(w => !editingWatch || String(w.id) !== String(editingWatch.id))
                     .map(w => (
                       <option key={w.id} value={w.id}>
-                        {w.brand} - {w.name} (ID: {String(w.id).substring(0, 8)}...)
+                        {w.brand ? w.brand.replace(/_/g, '') : ''} - {w.name} (ID: {String(w.id).substring(0, 8)}...)
                       </option>
                     ))}
                 </select>
@@ -679,6 +734,73 @@ export default function AdminWatchesPage() {
               </div>
 
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== BRAND MANAGER MODAL ==================== */}
+      {isBrandManagerOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-xs" onClick={() => setIsBrandManagerOpen(false)} />
+          
+          <div className="bg-white border border-zinc-200 w-full max-w-md rounded-lg shadow-2xl z-10 flex flex-col max-h-[85vh]">
+            <div className="p-4 border-b border-zinc-100 flex justify-between items-center">
+              <h3 className="font-semibold text-sm uppercase tracking-wider text-zinc-800">
+                Manage Watch Brands
+              </h3>
+              <button onClick={() => setIsBrandManagerOpen(false)} className="p-1 text-zinc-400 hover:text-zinc-800 rounded">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4 text-xs">
+              {/* Add New Brand Input */}
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  placeholder="Type new brand name (e.g. Casio)..."
+                  value={newCustomBrand}
+                  onChange={(e) => setNewCustomBrand(e.target.value)}
+                  className="flex-1 bg-white border border-zinc-200 text-zinc-900 rounded px-3 py-2 outline-none focus:border-primary"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleAddNewBrand(newCustomBrand)}
+                  className="px-4 py-2 bg-primary text-primary-foreground font-semibold rounded hover:bg-primary-hover transition-colors"
+                >
+                  Add
+                </button>
+              </div>
+
+              {/* Brands List */}
+              <div className="border border-zinc-100 rounded divide-y divide-zinc-100 max-h-60 overflow-y-auto">
+                {availableBrands.length === 0 ? (
+                  <p className="p-4 text-center text-zinc-400">No brands found.</p>
+                ) : (
+                  availableBrands.map((bName) => (
+                    <div key={bName} className="p-2.5 flex items-center justify-between hover:bg-zinc-50">
+                      <span className="font-medium text-zinc-800">{bName}</span>
+                      <button
+                        onClick={() => handleDeleteBrand(bName)}
+                        className="p-1 text-zinc-400 hover:text-red-600 rounded transition-colors"
+                        title={`Delete ${bName}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="p-3 border-t border-zinc-100 flex justify-end">
+              <button
+                onClick={() => setIsBrandManagerOpen(false)}
+                className="px-4 py-1.5 border border-zinc-200 hover:bg-zinc-50 text-zinc-600 rounded"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
