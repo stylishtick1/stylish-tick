@@ -163,3 +163,10 @@ class Wishlist(Base):
     # Relationships
     user = relationship("User", back_populates="wishlist")
     product = relationship("Product", back_populates="wishlist_entries")
+
+class Brand(Base):
+    __tablename__ = "brands"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)

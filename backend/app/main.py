@@ -17,9 +17,8 @@ if sentry_dsn:
 
 from app.core.database import Base, engine, SessionLocal, get_db
 from app.core.config import settings
-from app.models.models import Product, ProductImage, User
+from app.models.models import Product, ProductImage, User, Brand
 from app.core.security import get_password_hash
-
 from fastapi.middleware.gzip import GZipMiddleware
 
 @asynccontextmanager
@@ -46,6 +45,42 @@ async def lifespan(app: FastAPI):
             db_migration.close()
         except NameError:
             pass
+
+    # Restore/Ensure exact user brand names with underscores in DB
+    db_clean = SessionLocal()
+    try:
+        reverse_brand_map = {
+            "Rolex": "ROLE_X",
+            "Hublot": "HUBLO_T",
+            "Tommy Hilfiger": "Tomm_y Hilfige_r",
+            "Emporio Armani": "EMPERO_R ARMAN_I",
+            "Rado": "RAD_O",
+            "Fossil": "FOSSI_L",
+            "Tissot": "TISSO_T",
+            "Seiko": "SEIK_O"
+        }
+        all_products = db_clean.query(Product).all()
+        for p in all_products:
+            if p.brand in reverse_brand_map:
+                p.brand = reverse_brand_map[p.brand]
+        db_clean.commit()
+
+        # Re-sync Brand table with exact DB product brands
+        db_clean.query(Brand).delete()
+        db_clean.commit()
+
+        active_brands = db_clean.query(Product.brand).filter(Product.is_deleted == False).distinct().all()
+        for ab in active_brands:
+            if ab[0]:
+                existing_b = db_clean.query(Brand).filter(Brand.name == ab[0]).first()
+                if not existing_b:
+                    db_clean.add(Brand(name=ab[0]))
+        
+        db_clean.commit()
+    except Exception as clean_err:
+        print(f"Brand info: {clean_err}")
+    finally:
+        db_clean.close()
     
     # Seed Database if empty
     db = SessionLocal()

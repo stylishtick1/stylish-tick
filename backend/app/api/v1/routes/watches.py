@@ -124,8 +124,16 @@ def get_trending_products(db: Session = Depends(get_db)):
 
 @router.get("/brands", response_model=List[str])
 def get_all_brands(db: Session = Depends(get_db)):
-    brands = db.query(Product.brand).filter(Product.is_deleted == False).distinct().all()
-    return [b[0] for b in brands if b[0]]
+    from app.models.models import Brand
+    db_brands = db.query(Brand.name).all()
+    brand_names = [b[0] for b in db_brands if b[0]]
+    
+    prod_brands = db.query(Product.brand).filter(Product.is_deleted == False).distinct().all()
+    for pb in prod_brands:
+        if pb[0] and pb[0] not in brand_names:
+            brand_names.append(pb[0])
+            
+    return sorted(list(set(brand_names)))
 
 @router.get("/categories", response_model=List[str])
 def get_all_categories(db: Session = Depends(get_db)):
